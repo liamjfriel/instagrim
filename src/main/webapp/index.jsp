@@ -9,6 +9,11 @@
 <%@page import="uk.ac.dundee.computing.aec.instagrim.stores.*" %>
 <!DOCTYPE html>
 <html>
+    <%-- JQUERY AND JQUERY UI SOURCED FROM http://jqueryui.com/download/#!version=1.9.2, DOES UI WORK LIKE CALENDER--%>
+    <script src="http://code.jquery.com/jquery-2.1.0.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="js/index.js"></script>
+    
     <head>
         <title>Instagrim</title>
         <link rel="stylesheet" type="text/css" href="Styles.css" />
