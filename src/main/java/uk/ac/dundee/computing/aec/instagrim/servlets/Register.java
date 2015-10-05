@@ -28,7 +28,7 @@ public class Register extends HttpServlet {
     Cluster cluster=null;
     public void init(ServletConfig config) throws ServletException {
         // TODO Auto-generated method stub
-        cluster = CassandraHosts.getCluster();
+        cluster = CassandraHosts.getCluster();        
     }
 
 
@@ -47,10 +47,13 @@ public class Register extends HttpServlet {
             throws ServletException, IOException {
         String username=request.getParameter("username");
         String password=request.getParameter("password");
+        String dateofbirth=request.getParameter("dob");
+        String gender=request.getParameter("gender");
+        String nationality=request.getParameter("nationality");
         
         User us=new User();
         us.setCluster(cluster);
-        us.RegisterUser(username, password);
+        us.RegisterUser(username, password, dateofbirth, gender, nationality);
         
 	response.sendRedirect("/Instagrim");
         
@@ -66,4 +69,6 @@ public class Register extends HttpServlet {
         return "Short description";
     }// </editor-fold>
 
+    
+    
 }

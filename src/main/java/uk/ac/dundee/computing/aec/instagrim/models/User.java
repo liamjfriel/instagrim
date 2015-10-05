@@ -27,7 +27,7 @@ public class User {
         
     }
     
-    public boolean RegisterUser(String username, String Password){
+    public boolean RegisterUser(String username, String Password, String dob, String gender, String nationality){
         AeSimpleSHA1 sha1handler=  new AeSimpleSHA1();
         String EncodedPassword=null;
         try {
@@ -37,7 +37,7 @@ public class User {
             return false;
         }
         Session session = cluster.connect("instagrim");
-        PreparedStatement ps = session.prepare("insert into userprofiles (login,password) Values(?,?)");
+        PreparedStatement ps = session.prepare("insert into userprofiles (login,password, dob, gender, nationality) Values(?,?)");
        
         BoundStatement boundStatement = new BoundStatement(ps);
         session.execute( // this is where the query is executed
