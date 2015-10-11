@@ -48,13 +48,16 @@ public class Register extends HttpServlet {
         String username=request.getParameter("username");
         String password=request.getParameter("password");
         String dateofbirth=request.getParameter("dob");
-        String gender=request.getParameter("gender");
-        String nationality=request.getParameter("nationality");
+        String sex=request.getParameter("sex");
+        String streetname=request.getParameter("streetname");
+        String zip=request.getParameter("zip");
+        String city=request.getParameter("city");
+        String country=request.getParameter("country");
         
         User us=new User();
         us.setCluster(cluster);
-        us.RegisterUser(username, password, dateofbirth, gender, nationality);
-        
+        us.RegisterUser(username, password, dateofbirth, sex, streetname, zip, city, country);
+       
 	response.sendRedirect("/Instagrim");
         
     }

@@ -14,7 +14,7 @@ It implements the following URL patterns:
 /Image/*
 /Images
 /Thumb/*
- /Images/*
+/Images/*
 /Login
 /Register
 
