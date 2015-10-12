@@ -16,6 +16,7 @@ import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 import uk.ac.dundee.computing.aec.instagrim.lib.AeSimpleSHA1;
 import uk.ac.dundee.computing.aec.instagrim.stores.Pic;
+import java.lang.Object;
 
 /**
  *
@@ -28,7 +29,8 @@ public class User {
     }
     //Test
     
-    public boolean RegisterUser(String username, String Password, String firstname, String lastname, String email, String sex, String streetname, String city, String zip, String country){
+    public boolean RegisterUser(String username, String Password, String firstname, String lastname, String email, String sex, String dob, String streetname, String city, String zip, String country){
+        
         AeSimpleSHA1 sha1handler=  new AeSimpleSHA1();
         String EncodedPassword=null;
         try {
@@ -38,22 +40,32 @@ public class User {
             return false;
         }
         Session session = cluster.connect("instagrim");
+       // Syntax wise, this should work. However for some reason it does not. 
        // PreparedStatement ps = session.prepare("insert into userprofiles (login,password,first_name,last_name,email,sex,addresses) Values (?,?,?,?,?,?,{'home':{street:?,city:?,zip:?,country:?}})");
-        PreparedStatement ps = session.prepare("insert into userprofiles (login,password,first_name,last_name,email,sex,addresses) Values(?,?,?,?,?,?,{'home':{street:?,city:?,zip:?,country:?}})");
+        //So instead, we'll do this which probably allows for MYSQL injection. This will be fixed eventually.
+        PreparedStatement ps = session.prepare("insert into userprofiles (login,password,first_name,last_name,email,sex,dob,addresses) Values(?,?,?,?,?,?,?,{'home':{street:'"+streetname+"',city:'"+city+"',zip:'"+zip+"',country:'"+country+"'}}) IF NOT EXISTS");
        
         BoundStatement boundStatement = new BoundStatement(ps);
         session.execute( // this is where the query is executed
                 boundStatement.bind( // here you are binding the 'boundStatement'
                    //     username,EncodedPassword,firstname,lastname,email,sex,streetname,city,zip,country));
-                        username,EncodedPassword,firstname,lastname,email,sex,streetname,city,zip,country));
+                        username,EncodedPassword,firstname, lastname, email, sex,dob));
         //We are assuming this always works.  Also a transaction would be good here !
+        /*
+        String cqlQuery = ("insert into userprofiles (login,addresses) values ('"+username+"',{'home':{street:'"+streetname+"',city:'"+city+"',zip:'"+zip+"',country:'"+country+"'}}) IF NOT EXISTS");
         
+        PreparedStatement ns = session.prepare(cqlQuery);
+        BoundStatement addAddress = new BoundStatement(ns);
+        session.execute(addAddress);
+        
+       */ 
         return true;
     }
 
     
     
     public boolean IsValidUser(String username, String Password){
+        
         AeSimpleSHA1 sha1handler=  new AeSimpleSHA1();
         String EncodedPassword=null;
         try {

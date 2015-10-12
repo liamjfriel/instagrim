@@ -17,6 +17,6 @@
         <%
             Pic ps = new Pic();
             LoggedIn lg = new LoggedIn();
-            %>
+        %>
     </body>
 </html>
