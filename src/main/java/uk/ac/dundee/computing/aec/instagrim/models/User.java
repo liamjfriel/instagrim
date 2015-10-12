@@ -26,7 +26,7 @@ public class User {
     public User(){
         
     }
-    
+    //Test
     public boolean RegisterUser(String username, String Password, String firstname, String lastname, String email){
         AeSimpleSHA1 sha1handler=  new AeSimpleSHA1();
         String EncodedPassword=null;
