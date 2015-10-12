@@ -50,14 +50,17 @@
                     <li>Email <input type="text" name="email"></li>
                     <li>Date of Birth <input type="text" id="datepicker" name="dob"</li>
                     <li>Sex 
-                        <select name="item">
+                        <select name="sex">
                             <option value="male">Male</option>
                             <option value="female">Female</option>
                             <option value="prefernototsay">Prefer not to say..</option>
                         </select>
                     </li>
-                    
-                    <li>Nationality</li><input type="text" id="country_selector">
+                    <li>Street Name <input type="text" name="streetname"></li>
+                    <li>City <input type="text" name="city"></li>
+                    <li>Zip <input type="text" name="zip"></li>
+                   
+                    <li>Nationality</li><input type="text" name="country" id="country_selector">
                     <script>
                     $(function() {
                     $("#country").countrySelect();

@@ -27,7 +27,8 @@ public class User {
         
     }
     //Test
-    public boolean RegisterUser(String username, String Password, String firstname, String lastname, String email){
+    
+    public boolean RegisterUser(String username, String Password, String firstname, String lastname, String email, String sex, String streetname, String city, String zip, String country){
         AeSimpleSHA1 sha1handler=  new AeSimpleSHA1();
         String EncodedPassword=null;
         try {
@@ -37,17 +38,20 @@ public class User {
             return false;
         }
         Session session = cluster.connect("instagrim");
-        PreparedStatement ps = session.prepare("insert into userprofiles (login,password,first_name,last_name,{email}) Values(?,?,?,?,?)");
+       // PreparedStatement ps = session.prepare("insert into userprofiles (login,password,first_name,last_name,email,sex,addresses) Values (?,?,?,?,?,?,{'home':{street:?,city:?,zip:?,country:?}})");
+        PreparedStatement ps = session.prepare("insert into userprofiles (login,password,first_name,last_name,email,sex,addresses) Values(?,?,?,?,?,?,{'home':{street:?,city:?,zip:?,country:?}})");
        
         BoundStatement boundStatement = new BoundStatement(ps);
-        String[] emailbinding = {email};
         session.execute( // this is where the query is executed
                 boundStatement.bind( // here you are binding the 'boundStatement'
-                        username,EncodedPassword,firstname,lastname,emailbinding));
+                   //     username,EncodedPassword,firstname,lastname,email,sex,streetname,city,zip,country));
+                        username,EncodedPassword,firstname,lastname,email,sex,streetname,city,zip,country));
         //We are assuming this always works.  Also a transaction would be good here !
         
         return true;
     }
+
+    
     
     public boolean IsValidUser(String username, String Password){
         AeSimpleSHA1 sha1handler=  new AeSimpleSHA1();
