@@ -15,16 +15,10 @@
     </head>
     <body>
         <h1>Logging out..</h1>
-        <% 
-            LoggedIn lg = (LoggedIn) session.getAttribute("LoggedIn");
-                        if (lg != null) {
-                            String UserName = lg.getUsername();
-                            if (lg.getlogedin()) {
-                                lg.setLoginState(false);
-                                lg.setUsername(null);
-                            } else { }
-                        } else { }
-            response.sendRedirect("index.jsp");
-        %>
+        <form id="postme" method="POST"  action="Logout">
+            <script type="text/javascript">
+                document.getElementById("postme").submit();
+            </script>
+        </form>
     </body>
 </html>

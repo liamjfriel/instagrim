@@ -52,7 +52,7 @@ public class Logout extends HttpServlet {
         LoggedIn lg= new LoggedIn();
         lg.setLoginState(false); //Set login state to false, meaning we aren't logged in
         lg.setUsername(null); //Set the username to null because we are no longer logged in
-          
+        lg = null;
         session.setAttribute("LoggedIn", lg);
         System.out.println("Session in servlet "+session);
         RequestDispatcher rd=request.getRequestDispatcher("index.jsp");
