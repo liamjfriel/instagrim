@@ -1,7 +1,7 @@
 <%-- 
-    Document   : UsersPics
-    Created on : Sep 24, 2014, 2:52:48 PM
-    Author     : Administrator
+    Document   : UserProfile
+    Created on : 13/10/15
+    Author     : Liam Friel
 --%>
 
 <%@page import="java.util.*"%>
@@ -30,23 +30,23 @@
  
         <article>
             <h1>Your Pics</h1>
-        
         <%
-            java.util.LinkedList<Pic> lsPics = (java.util.LinkedList<Pic>) request.getAttribute("Pics");
-            if (lsPics == null) {
+            String username = request.getParameter("user");
+            java.util.HashMap<String,String> userinfo = (java.util.HashMap<String,String>) request.getAttribute("InfoMap");
+            if (userinfo == null) {
         %>
-        <p>No Pictures found</p>
+        <p>User profile does not exist!</p>
         <%
         } else {
-            Iterator<Pic> iterator;
-            iterator = lsPics.iterator();
-            while (iterator.hasNext()) {
-                Pic p = (Pic) iterator.next();
-
         %>
-        <a href="/Instagrim/Image/<%=p.getSUUID()%>" ><img src="/Instagrim/Thumb/<%=p.getSUUID()%>"></a><br/><%
-
-            }
+        <p>First Name: <%=userinfo.get("FirstName")%></p>
+        <p>Second Name: <%=userinfo.get("SecondName")%></p>
+        <p>Sex: <%=userinfo.get("Sex")%></p>
+        <p>DOB: <%=userinfo.get("DOB")%></p>
+        <p>Town: <%=userinfo.get("Town")%></p>
+        <p>Country: <%=userinfo.get("Country")%></p>
+        <br/>
+       <%
             }
         %>
         </article>
