@@ -29,6 +29,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import uk.ac.dundee.computing.aec.instagrim.lib.Addresses;
 import java.lang.Object;
+import java.util.Set;
+import java.util.HashSet;
 /**
  *
  * @author Administrator
@@ -53,7 +55,7 @@ public class User {
         Session session = cluster.connect("instagrim");
        // Syntax wise, this should work. However for some reason it does not. 
        // PreparedStatement ps = session.prepare("insert into userprofiles (login,password,first_name,last_name,email,sex,addresses) Values (?,?,?,?,?,?,{'home':{street:?,city:?,zip:?,country:?}})");
-        //So instead, we'll do this which probably allows for MYSQL injection. This will be fixed eventually.
+        //So instead, we'll do this which probably allows for CQL injection. This will be fixed eventually.
         PreparedStatement ps = session.prepare("insert into userprofiles (login,password,first_name,last_name,email,sex,dob,addresses) Values(?,?,?,?,?,?,?,{'home':{street:'"+streetname+"',city:'"+city+"',zip:'"+zip+"',country:'"+country+"'}}) IF NOT EXISTS");
        
         BoundStatement boundStatement = new BoundStatement(ps);
@@ -62,21 +64,110 @@ public class User {
                    //     username,EncodedPassword,firstname,lastname,email,sex,streetname,city,zip,country));
                         username,EncodedPassword,firstname, lastname, email, sex,dob));
         //We are assuming this always works.  Also a transaction would be good here !
-        /*
-        String cqlQuery = ("insert into userprofiles (login,addresses) values ('"+username+"',{'home':{street:'"+streetname+"',city:'"+city+"',zip:'"+zip+"',country:'"+country+"'}}) IF NOT EXISTS");
         
-        PreparedStatement ns = session.prepare(cqlQuery);
-        BoundStatement addAddress = new BoundStatement(ns);
-        session.execute(addAddress);
-        
-       */ 
         return true;
+    }
+    
+    public void followUser(String follower, String followtarget)
+    {
+        
+        Session session = cluster.connect("instagrim");
+        
+        Set<String> set = new HashSet();
+        set.add(follower);
+        PreparedStatement ps = session.prepare("update userprofiles set followers = followers + ? where login=?"); //Because this is a set, we don't really have to worry if the record already exists in there
+        //As casandra does not duplicate the values
+        BoundStatement boundStatement = new BoundStatement(ps); // Create new boundstatement object
+        
+       // Syntax wise, this should work. However for some reason it does not. 
+       // PreparedStatement ps = session.prepare("insert into userprofiles (login,password,first_name,last_name,email,sex,addresses) Values (?,?,?,?,?,?,{'home':{street:?,city:?,zip:?,country:?}})");
+        //So instead, we'll do this which probably allows for CQL injection. This will be fixed eventually.
+        session.execute( // this is where the query is executed
+                boundStatement.bind( // here you are binding the 'boundStatement'
+                   //     username,EncodedPassword,firstname,lastname,email,sex,streetname,city,zip,country));
+                        set,followtarget));
+ 
+    }
+    
+    
+    public boolean isFollowing(String follower, String followtarget)
+    {
+        Session session = cluster.connect("instagrim");
+        PreparedStatement ps = session.prepare("select followers from userprofiles where login =?");
+        ResultSet rs = null;
+        BoundStatement boundStatement = new BoundStatement(ps); // Create new boundstatement object
+        rs = session.execute( // this is where the query is executed
+                boundStatement.bind( // here you are binding the 'boundStatement'
+                        followtarget));
+        if (rs.isExhausted()) { //If there's nothing in the resultset
+            System.out.println("User not found."); //Print that there is no users found
+            return false; //Return null
+        } else { //Otherwise
+            for (Row row : rs) {
+               //THIS WAS ALL SOURCED FROM THE DOCUMENTATION FOR CASSANDRA
+               Set<String> set = row.getSet("followers", String.class);
+               for (String isfollower : set){ //For every item in the set
+                   //If the follower is already in the set
+                   if(isfollower.equals(follower)){
+                       return true; //Return true
+                   }
+               }
+               
+               return false; //If we get here, the user is not in the follower set
+            }
+          
+        }
+     return false;   
+    }
+    
+    public void unfollowUser(String follower, String followtarget)
+    {
+        
+        Session session = cluster.connect("instagrim");
+        
+        Set<String> set = new HashSet();
+        set.add(follower);
+        PreparedStatement ps = session.prepare("update userprofiles set followers = followers - ? where login=?"); //Because this is a set, we don't really have to worry if the record already exists in there
+        //As casandra does not duplicate the values
+        BoundStatement boundStatement = new BoundStatement(ps); // Create new boundstatement object
+        
+       // Syntax wise, this should work. However for some reason it does not. 
+       // PreparedStatement ps = session.prepare("insert into userprofiles (login,password,first_name,last_name,email,sex,addresses) Values (?,?,?,?,?,?,{'home':{street:?,city:?,zip:?,country:?}})");
+        //So instead, we'll do this which probably allows for CQL injection. This will be fixed eventually.
+        session.execute( // this is where the query is executed
+                boundStatement.bind( // here you are binding the 'boundStatement'
+                   //     username,EncodedPassword,firstname,lastname,email,sex,streetname,city,zip,country));
+                        set,followtarget));
+ 
+    }
+    //Return a set with all followers
+    public Set<String> followerSet(String username){
+    
+        Session session = cluster.connect("instagrim");
+        PreparedStatement ps = session.prepare("select followers from userprofiles where login =?");
+        ResultSet rs = null;
+        BoundStatement boundStatement = new BoundStatement(ps); // Create new boundstatement object
+        rs = session.execute( // this is where the query is executed
+                boundStatement.bind( // here you are binding the 'boundStatement'
+                        username));
+        if (rs.isExhausted()) { //If there's nothing in the resultset
+            System.out.println("User not found."); //Print that there is no users found
+            return null; //Return null
+        } else { //Otherwise
+            for (Row row : rs) {
+               //THIS WAS ALL SOURCED FROM THE DOCUMENTATION FOR CASSANDRA
+               Set<String> set = row.getSet("followers", String.class);
+               return set;
+            }
+          
+        }
+        
+        return null;
     }
     
     /* Returns a list with all the publicly viewable user data*/
     public Map UserInfoMap(String username)
     {
-        Row userinformationbeforeparse; //Declare our list of type row
         
         Map<String,String> actualuserinformation = new HashMap(); 
         
@@ -84,7 +175,7 @@ public class User {
                 //Declare the hashmap we will return
          //Start new session and connect to cluster
         
-        PreparedStatement ps = session.prepare("select first_name,last_name,sex,dob,addresses from userprofiles where login =?");
+        PreparedStatement ps = session.prepare("select first_name,last_name,sex,dob,addresses,followers from userprofiles where login =?");
         ResultSet rs = null; //Declare a new result set object
         BoundStatement boundStatement = new BoundStatement(ps); // Create new boundstatement object
         rs = session.execute( // this is where the query is executed
@@ -100,6 +191,9 @@ public class User {
                //THIS WAS ALL SOURCED FROM THE DOCUMENTATION FOR CASSANDRA
                UDTMapper<Addresses> mapper = new MappingManager(session).udtMapper(Addresses.class);
                Map<String,UDTValue> addresses = row.getMap("addresses", String.class, UDTValue.class);
+               Set<String> set = new HashSet(); 
+               set = row.getSet("followers", String.class);
+               
                for(String key : addresses.keySet()) {
                    Addresses address = mapper.fromUDT(addresses.get(key));
                    actualuserinformation.put("Town", address.getCity()); //Put

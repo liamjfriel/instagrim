@@ -50,9 +50,9 @@ public final class Keyspaces {
                     + "      email text,\n"
                     + "      sex text,\n"
                     + "      dob text,\n"
-                    + "      following set<text>,\n"
                     + "      followers set<text>,\n"
-                    + "      addresses  map<text, frozen <address>>\n"
+                    + "      addresses  map<text, frozen <address>>,\n"
+                    + "      profilepictureid text\n"
                     + "  );";
             Session session = c.connect();
             try {

@@ -30,6 +30,7 @@
  
         <article>
             <h1>Your Pics</h1>
+            
         <%
             String username = request.getParameter("user");
             java.util.HashMap<String,String> userinfo = (java.util.HashMap<String,String>) request.getAttribute("InfoMap");
@@ -46,7 +47,41 @@
         <p>Town: <%=userinfo.get("Town")%></p>
         <p>Country: <%=userinfo.get("Country")%></p>
         <br/>
+        
        <%
+            }
+            boolean isfollowing = (boolean)request.getAttribute("isfollowing");
+            if(isfollowing){
+        %>
+            <form method="POST">
+                <input type="submit" name="Unfollow" value="Unfollow"> 
+            </form>
+        <%
+            } else { 
+        %>  
+            <form method="POST">
+                <input type="submit" name="Follow" value="Follow"> 
+            </form>
+        <%
+            }
+            java.util.Set<String> followerset = (java.util.Set<String>) request.getAttribute("followerSet");
+            if(followerset == null){
+        %>
+        <p>User has no followers.</p>
+        <%
+            } else { 
+        %>
+        <p> Followers:</p>
+        <% 
+                Iterator<String> iterator;
+                iterator = followerset.iterator();
+                
+                while (iterator.hasNext()) {
+                String follower = (String) iterator.next();
+        %> 
+        <p><%=follower%></p>
+        <%
+                }
             }
         %>
         </article>
