@@ -50,6 +50,27 @@ public class UserProfiles extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         
+               if (request.getParameter("Follow") != null ) //If the user clicked "follow"
+               {
+                    HttpSession session=request.getSession();
+                    LoggedIn lg= (LoggedIn)session.getAttribute("LoggedIn");
+                    String username; //Declare username
+                    if (lg.getlogedin()){
+                        username=lg.getUsername(); //Set the variable username to the users logged in username
+                        String args[] = Convertors.SplitRequestPath(request); //Borrowed from Image, takes arguments of URL and splits it so we can get the username
+                        String followtarget = args[2]; //This is our target for following
+                        
+                        User user = new User();
+                        user.setCluster(cluster);
+                        user.followUser(username,followtarget);
+                        //RequestDispatcher rd=request.getRequestDispatcher("/profiles/" + followtarget);
+                       // rd.forward(null,response); 
+                         response.sendRedirect(request.toString()); //We aren't really interested in the request or the response, in fact a request will lead to an infinite loop, so we redirect here.
+                        
+                        }
+                
+        
+                    }
     }
     
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
