@@ -6,12 +6,17 @@
 
 package uk.ac.dundee.computing.aec.instagrim.models;
 
+
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.mapping.UDTMapper;
+import com.datastax.driver.mapping.MappingManager;
+import com.datastax.driver.mapping.*;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.UDTValue;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
 import uk.ac.dundee.computing.aec.instagrim.lib.AeSimpleSHA1;
@@ -21,7 +26,9 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
-
+import java.util.Iterator;
+import uk.ac.dundee.computing.aec.instagrim.lib.Addresses;
+import java.lang.Object;
 /**
  *
  * @author Administrator
@@ -73,28 +80,62 @@ public class User {
         
         Map<String,String> actualuserinformation = new HashMap(); 
         
-        actualuserinformation.put("FirstName","LastName");
-  
+        Session session = cluster.connect("instagrim");
                 //Declare the hashmap we will return
-        Session session = cluster.connect("instagrim"); //Start new session and connect to cluster
+         //Start new session and connect to cluster
+        
         PreparedStatement ps = session.prepare("select first_name,last_name,sex,dob,addresses from userprofiles where login =?");
         ResultSet rs = null; //Declare a new result set object
         BoundStatement boundStatement = new BoundStatement(ps); // Create new boundstatement object
         rs = session.execute( // this is where the query is executed
                 boundStatement.bind( // here you are binding the 'boundStatement'
                         username));
-        userinformationbeforeparse = rs.one(); //Set our userinformationbeforeparse list to the result
         
-        //What we are doing here is parsing the userinformationbeforeparse row that contains the result of our query and pulling information that we want from it and 
-        //..putting it into our hashmap that we will pass
-        actualuserinformation.put("FirstName", userinformationbeforeparse.getString(1));
-        actualuserinformation.put("SecondName", userinformationbeforeparse.getString(2));
-        actualuserinformation.put("Sex", userinformationbeforeparse.getString(3));
-        actualuserinformation.put("DOB", userinformationbeforeparse.getString(4));
-        //Next three lines get the town/city and  country and put them in the hashmap. They do this by pulling the map from the row, then pulling data from keys in that map
-       // actualuserinformation.put("Town", userinformationbeforeparse.getMap("addresses",String.class,String.class).get("city"));
-       // actualuserinformation.put("Country", userinformationbeforeparse.getMap("addresses",String.class,String.class).get("country"));   
-   
+        //Okay, so we borrowed this from the method IsValidUser
+        if (rs.isExhausted()) { //If there's nothing in the resultset
+            System.out.println("User not found."); //Print that there is no users found
+            return null; //Return null
+        } else { //Otherwise
+            for (Row row : rs) {
+               //THIS WAS ALL SOURCED FROM THE DOCUMENTATION FOR CASSANDRA
+               UDTMapper<Addresses> mapper = new MappingManager(session).udtMapper(Addresses.class);
+               Map<String,UDTValue> addresses = row.getMap("addresses", String.class, UDTValue.class);
+               for(String key : addresses.keySet()) {
+                   Addresses address = mapper.fromUDT(addresses.get(key));
+                   actualuserinformation.put("Town", address.getCity()); //Put
+                   actualuserinformation.put("Country", address.getCountry());
+               }
+              //  Addresses addresses = mappingsession.getFromRow(Addresses.class, row);
+                
+              //  addresses = mappingsession.get(Addresses.class,4);
+                
+                actualuserinformation.put("FirstName", row.getString(0));
+                actualuserinformation.put("SecondName", row.getString(1));
+                actualuserinformation.put("Sex", row.getString(2));
+                actualuserinformation.put("DOB", row.getString(3));
+                
+                return actualuserinformation;
+            }
+        }
+        
+        
+        
+        /*
+        userinformationbeforeparse = rs.one(); //Set our userinformationbeforeparse list to the result
+        if(rs == null){
+            actualuserinformation.put("FirstName","test");
+        } else {
+            //What we are doing here is parsing the userinformationbeforeparse row that contains the result of our query and pulling information that we want from it and 
+            //..putting it into our hashmap that we will pass
+            actualuserinformation.put("FirstName", userinformationbeforeparse.getString(0));
+            actualuserinformation.put("SecondName", userinformationbeforeparse.getString(1));
+            actualuserinformation.put("Sex", userinformationbeforeparse.getString(2));
+            actualuserinformation.put("DOB", userinformationbeforeparse.getString(3));
+            //Next three lines get the town/city and  country and put them in the hashmap. They do this by pulling the map from the row, then pulling data from keys in that map
+           // actualuserinformation.put("Town", userinformationbeforeparse.getMap("addresses",String.class,String.class).get("city"));
+           // actualuserinformation.put("Country", userinformationbeforeparse.getMap("addresses",String.class,String.class).get("country"));   
+        }
+        */
         return actualuserinformation; //Return our map now that it's full of data
     }
     

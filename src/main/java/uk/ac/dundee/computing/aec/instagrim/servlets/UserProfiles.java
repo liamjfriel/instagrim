@@ -32,8 +32,6 @@ import java.util.HashMap;
 public class UserProfiles extends HttpServlet {
 
     Cluster cluster=null;
-
-
     public void init(ServletConfig config) throws ServletException {
         // TODO Auto-generated method stub
         cluster = CassandraHosts.getCluster();
@@ -58,6 +56,7 @@ public class UserProfiles extends HttpServlet {
         String args[] = Convertors.SplitRequestPath(request); //Borrowed from Image, takes arguments of URL and splits it so we can get the username
         String username = args[2];
         User usersprofile = new User(); //Create new user object
+        usersprofile.setCluster(cluster); //Set the cluster in this user class to the one we are sending
         Map<String,String> userinfo = usersprofile.UserInfoMap(username); //Set our map to the one we get from the user model, which is retrieved from the database
         RequestDispatcher rd = request.getRequestDispatcher("/userprofile.jsp"); //Get the request dispatcher from useprrofile
         request.setAttribute("InfoMap", userinfo); //Set the attribute of infomap to the map we just created
