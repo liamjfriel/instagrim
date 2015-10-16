@@ -54,13 +54,13 @@
             if(isfollowing){
         %>
             <form method="POST">
-                <input type="submit" name="Unfollow" value="Unfollow"> 
+                <input type="submit" name="Follow" value="follow"> 
             </form>
         <%
             } else { 
         %>  
             <form method="POST">
-                <input type="submit" name="Follow" value="Follow"> 
+                <input type="submit" name="UnFollow" value="follow"> 
             </form>
         <%
             }

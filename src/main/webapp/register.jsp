@@ -31,10 +31,11 @@
         </header>
         
         <nav>
-            <ul><script src="http://code.jquery.com/jquery-2.1.0.min.js"></script>
+            
+            <script src="http://code.jquery.com/jquery-2.1.0.min.js"></script>
             <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.4/jquery-ui.min.js"></script>
             <script type="text/javascript" src="js/index.js"></script>
-                
+            <ul>  
             <li><a href="/Instagrim/Images/majed">Sample Images</a></li>
             </ul>
         </nav>
@@ -48,7 +49,7 @@
                     <li>First Name <input type="text" name="firstname"></li>
                     <li>Last Name <input type="text" name="lastname"></li>
                     <li>Email <input type="text" name="email"></li>
-                    <li>Date of Birth <input type="text" id="datepicker" name="dob"</li>
+                    <li>Date of Birth <input type="text" id="datepicker" name="dob"></li>
                     <li>Sex 
                         <select name="sex">
                             <option value="male">Male</option>
@@ -60,17 +61,17 @@
                     <li>City <input type="text" name="city"></li>
                     <li>Zip <input type="text" name="zip"></li>
                    
-                    <li>Nationality</li><input type="text" name="country" id="country_selector">
+                    <li>Nationality<input type="text" name="country" id="country_selector">
                     <script>
                     $(function() {
                     $("#country").countrySelect();
                     });
                     </script>
                       
-                   
+                    </li>
                         
                         
-                    <input type="submit" value="Submit">
+                    <li><input type="submit" value="Submit"></li>
                 </ul>
                 <br/>
                 <input type="submit" value="Register"> 
