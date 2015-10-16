@@ -68,17 +68,8 @@ public class Search extends HttpServlet {
                     {
                         List<Map> nameresultmap = user.userSearch("login",query);
                         request.setAttribute("searchresult", nameresultmap);
+                        break;
                         
-                    }
-                    case "bysex":
-                    {
-                        List<Map> nameresultmap = user.userSearch("sex",query);
-                        request.setAttribute("searchresult", nameresultmap);
-                    }
-                    case "byemail":
-                    {
-                        List<Map> nameresultmap = user.userSearch("login",query);
-                        request.setAttribute("searchresult", nameresultmap);
                     }
                 }
                 
