@@ -48,6 +48,7 @@ public final class Keyspaces {
                     + "      first_name text,\n"
                     + "      last_name text,\n"
                     + "      email text,\n"
+                    + "      description text,\n"
                     + "      sex text,\n"
                     + "      dob text,\n"
                     + "      followers set<text>,\n"

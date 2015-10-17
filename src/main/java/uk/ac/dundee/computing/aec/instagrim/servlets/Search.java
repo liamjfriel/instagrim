@@ -23,7 +23,8 @@ import uk.ac.dundee.computing.aec.instagrim.models.User;
 import uk.ac.dundee.computing.aec.instagrim.stores.LoggedIn;
 import java.util.Map;
 import java.util.List;
-
+import uk.ac.dundee.computing.aec.instagrim.models.PicModel;
+import uk.ac.dundee.computing.aec.instagrim.stores.Pic;
 /**
  *
  * @author Administrator
@@ -58,19 +59,32 @@ public class Search extends HttpServlet {
         if (request.getParameter("SubmitSearch") != null ) //If the user clicked "follow"
                {
                 String querytype=request.getParameter("searchby");
-                String query=request.getParameter("searchquery");
-                User user = new User();
-                user.setCluster(cluster);
+                String usernametopass=request.getParameter("searchquery");
                 RequestDispatcher rd = request.getRequestDispatcher("/search.jsp");
                 
                 switch(querytype){
                     case "byname":
                     {
-                        List<Map> nameresultmap = user.userSearch("login",query);
+                        User user = new User();
+                        user.setCluster(cluster);
+                        List<Map> nameresultmap = user.userSearch("login",usernametopass);
+                        request.setAttribute("searchtype", querytype);
                         request.setAttribute("searchresult", nameresultmap);
+                        
                         break;
                         
                     }
+                    case "picbyname":
+                    {
+                        PicModel picmod = new PicModel();
+                        picmod.setCluster(cluster);
+                        List<Pic> picresultmap = picmod.getPicsForUser(usernametopass);
+                        request.setAttribute("searchtype", querytype);
+                        request.setAttribute("searchresult", picresultmap);
+                        break;
+                        
+                    }
+                    
                 }
                 
                 rd.forward(request, response);

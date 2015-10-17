@@ -71,12 +71,15 @@ public class UserProfiles extends HttpServlet {
                        // rd.forward(null,response); 
                          response.sendRedirect(request.toString()); //We aren't really interested in the request or the response, in fact a request will lead to an infinite loop, so we redirect here.
                         
+                    } else {
+                        //Send them to the login page
+                        response.sendRedirect("/Instagrim/login.jsp");
                     }
                 
         
                 }
                
-               if (request.getParameter("Unfollow") != null ){ //If the user clicked "unfollow"
+               if (request.getParameter("UnFollow") != null ){ //If the user clicked "unfollow"
                    
                   if (lg.getlogedin()){
                         username=lg.getUsername(); //Set the variable username to the users logged in username
@@ -97,28 +100,32 @@ public class UserProfiles extends HttpServlet {
     }
     
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String args[] = Convertors.SplitRequestPath(request); //Borrowed from Image, takes arguments of URL and splits it so we can get the username
-        String username = args[2];
-        User usersprofile = new User(); //Create new user object
-        usersprofile.setCluster(cluster); //Set the cluster in this user class to the one we are sending
-        Map<String,String> userinfo = usersprofile.UserInfoMap(username); //Set our map to the one we get from the user model, which is retrieved from the database
-        RequestDispatcher rd = request.getRequestDispatcher("/userprofile.jsp"); //Get the request dispatcher from useprrofile
-        request.setAttribute("InfoMap", userinfo); //Set the attribute of infomap to the map we just created
-        Set<String> set = usersprofile.followerSet(username);
-        request.setAttribute("followerSet", set);
-        
+            
         HttpSession session=request.getSession();
         LoggedIn lg= (LoggedIn)session.getAttribute("LoggedIn");
-                    String logedinname; //Declare username
-                    if (lg.getlogedin()){
-                        logedinname=lg.getUsername();
-                        boolean isfollowing = usersprofile.isFollowing(logedinname,username);
-                        request.setAttribute("isfollowing", isfollowing);
-                    }
-                        
-                
-        
-        rd.forward(request, response);
+        if(lg != null){
+            if (lg.getlogedin()){
+                String args[] = Convertors.SplitRequestPath(request); //Borrowed from Image, takes arguments of URL and splits it so we can get the username
+                String username = args[2];
+                User usersprofile = new User(); //Create new user object
+                usersprofile.setCluster(cluster); //Set the cluster in this user class to the one we are sending
+                Map<String,String> userinfo = usersprofile.UserInfoMap(username); //Set our map to the one we get from the user model, which is retrieved from the database
+                RequestDispatcher rd = request.getRequestDispatcher("/userprofile.jsp"); //Get the request dispatcher from useprrofile
+                request.setAttribute("InfoMap", userinfo); //Set the attribute of infomap to the map we just created
+                boolean loggedin = true;
+                request.setAttribute("loggedin", loggedin);
+                String logedinname=lg.getUsername();
+                Set<String> set = usersprofile.followerSet(username);
+                request.setAttribute("followerSet", set);
+                boolean isfollowing = usersprofile.isFollowing(logedinname,username);
+                request.setAttribute("isfollowing", isfollowing);
+                rd.forward(request, response);
+                } else {
+                response.sendRedirect("/login.jsp");
+            }
+        } else {
+            response.sendRedirect("/Instagrim/login.jsp");
+        } 
     }
 
 

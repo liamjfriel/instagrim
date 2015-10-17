@@ -121,6 +121,8 @@ public class User {
     }
     
     
+
+    
     public List<Map> userSearch(String searchby,String tosearch)
     {
         
@@ -128,56 +130,18 @@ public class User {
         List<Map> listofresults = new ArrayList();
         Session session = cluster.connect("instagrim");
         ResultSet rs = null; //Result set set to null, this will be set properly in the switch below
-        switch(searchby)
-        {
-            case "login":
-            {
-                PreparedStatement ps = session.prepare("select login,sex,profilepictureid from userprofiles where login =?"); //Because this is a set, we don't really have to worry if the record already exists in there
-                //As casandra does not duplicate the values
-                BoundStatement boundStatement = new BoundStatement(ps); // Create new boundstatement object
-               // Syntax wise, this should work. However for some reason it does not. 
-               // PreparedStatement ps = session.prepare("insert into userprofiles (login,password,first_name,last_name,email,sex,addresses) Values (?,?,?,?,?,?,{'home':{street:?,city:?,zip:?,country:?}})");
-                //So instead, we'll do this which probably allows for CQL injection. This will be fixed eventually.
-                rs = session.execute( // this is where the query is executed
-                        boundStatement.bind( // here you are binding the 'boundStatement'
-                           //     username,EncodedPassword,firstname,lastname,email,sex,streetname,city,zip,country));
-                                tosearch));
-                break;
-                
-            }
-            case "sex":
-            {
-                PreparedStatement ps = session.prepare("select login,sex,profilepictureid from userprofiles where sex =?"); //Because this is a set, we don't really have to worry if the record already exists in there
-                //As casandra does not duplicate the values
-                BoundStatement boundStatement = new BoundStatement(ps); // Create new boundstatement object
-               // Syntax wise, this should work. However for some reason it does not. 
-               // PreparedStatement ps = session.prepare("insert into userprofiles (login,password,first_name,last_name,email,sex,addresses) Values (?,?,?,?,?,?,{'home':{street:?,city:?,zip:?,country:?}})");
-                //So instead, we'll do this which probably allows for CQL injection. This will be fixed eventually.
-                rs = session.execute( // this is where the query is executed
-                        boundStatement.bind( // here you are binding the 'boundStatement'
-                           //     username,EncodedPassword,firstname,lastname,email,sex,streetname,city,zip,country));
-                                tosearch));
-                break;
         
-                
-            }
-            case "email":
-            {
-                PreparedStatement ps = session.prepare("select login,sex,profilepictureid from userprofiles where email =?"); //Because this is a set, we don't really have to worry if the record already exists in there
-                //As casandra does not duplicate the values
-                BoundStatement boundStatement = new BoundStatement(ps); // Create new boundstatement object
-               // Syntax wise, this should work. However for some reason it does not. 
-               // PreparedStatement ps = session.prepare("insert into userprofiles (login,password,first_name,last_name,email,sex,addresses) Values (?,?,?,?,?,?,{'home':{street:?,city:?,zip:?,country:?}})");
-                //So instead, we'll do this which probably allows for CQL injection. This will be fixed eventually.
-                rs = session.execute( // this is where the query is executed
-                        boundStatement.bind( // here you are binding the 'boundStatement'
-                           //     username,EncodedPassword,firstname,lastname,email,sex,streetname,city,zip,country));
-                                tosearch));
-        
-                break;
-            }
-        }
-        
+        PreparedStatement ps = session.prepare("select login,description,sex,profilepictureid from userprofiles where login =?"); //Because this is a set, we don't really have to worry if the record already exists in there
+        //As casandra does not duplicate the values
+        BoundStatement boundStatement = new BoundStatement(ps); // Create new boundstatement object
+        // Syntax wise, this should work. However for some reason it does not. 
+        // PreparedStatement ps = session.prepare("insert into userprofiles (login,password,first_name,last_name,email,sex,addresses) Values (?,?,?,?,?,?,{'home':{street:?,city:?,zip:?,country:?}})");
+        //So instead, we'll do this which probably allows for CQL injection. This will be fixed eventually.
+        rs = session.execute( // this is where the query is executed
+            boundStatement.bind( // here you are binding the 'boundStatement'
+            //     username,EncodedPassword,firstname,lastname,email,sex,streetname,city,zip,country));
+                tosearch));
+
         if (rs.isExhausted() || rs == null) { //If there's nothing in the resultset
             System.out.println("User not found."); //Print that there is no users found
             return null; //Return null
@@ -186,6 +150,7 @@ public class User {
                //THIS WAS ALL SOURCED FROM THE DOCUMENTATION FOR CASSANDRA
                searchresults.put("login", row.getString("login"));
                searchresults.put("sex", row.getString("sex"));
+               searchresults.put("description",row.getString("description"));
                searchresults.put("profilepicid", row.getString("profilepictureid"));
                listofresults.add(searchresults);
              }
