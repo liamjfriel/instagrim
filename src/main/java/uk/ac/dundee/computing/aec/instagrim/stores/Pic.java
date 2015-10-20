@@ -8,6 +8,8 @@ package uk.ac.dundee.computing.aec.instagrim.stores;
 import com.datastax.driver.core.utils.Bytes;
 import java.nio.ByteBuffer;
 import java.util.Date;
+import java.util.Map;
+import java.util.UUID;
 
 /**
  *
@@ -18,9 +20,10 @@ public class Pic {
     private ByteBuffer bImage = null;
     private int length;
     private String type;
-    private java.util.UUID UUID=null;
+    private UUID UUID=null;
     private String uploader;
     private Date uploaddate;
+    private Map<String,String> comments;
     
     public void Pic() {
 
@@ -31,10 +34,14 @@ public class Pic {
     public String getSUUID(){
         return UUID.toString();
     }
-    public void setPic(ByteBuffer bImage, int length,String type) {
+    public void setPic(ByteBuffer bImage, int length,String type, Date uploaddate, Map comments, UUID picid, String uploader) {
         this.bImage = bImage;
         this.length = length;
         this.type=type;
+        this.uploaddate = uploaddate;
+        this.comments = comments;
+        this.UUID = picid;
+        this.uploader = uploader;
     }
 
     public ByteBuffer getBuffer() {
@@ -70,5 +77,14 @@ public class Pic {
     public void setUploaddate(Date uploaddate){
         this.uploaddate = uploaddate;
     }
+    
+    public void setComments(Map comments){
+        this.comments = comments;
+    }
+    
+    public Map getComments(){
+        return comments;
+    }
 
+    
 }

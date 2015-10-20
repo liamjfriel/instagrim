@@ -8,6 +8,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -25,23 +28,20 @@ import org.apache.commons.fileupload.util.Streams;
 import uk.ac.dundee.computing.aec.instagrim.lib.CassandraHosts;
 import uk.ac.dundee.computing.aec.instagrim.lib.Convertors;
 import uk.ac.dundee.computing.aec.instagrim.models.PicModel;
+import uk.ac.dundee.computing.aec.instagrim.models.User;
 import uk.ac.dundee.computing.aec.instagrim.stores.LoggedIn;
 import uk.ac.dundee.computing.aec.instagrim.stores.Pic;
+import java.util.UUID;
 
 /**
  * Servlet implementation class Image
  */
 @WebServlet(urlPatterns = {
-    "/Image",
-    "/Image/*",
-    "/Thumb/*",
-    "/Images",
-    "/Images/*",
-    "/Imagepage/"
+    "/Imagepage/*"
 })
 @MultipartConfig
 
-public class Image extends HttpServlet {
+public class ImagePage extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
     private Cluster cluster;
@@ -52,12 +52,8 @@ public class Image extends HttpServlet {
     /**
      * @see HttpServlet#HttpServlet()
      */
-    public Image() {
+    public ImagePage() {
         super();
-        // TODO Auto-generated constructor stub
-        CommandsMap.put("Image", 1);
-        CommandsMap.put("Images", 2);
-        CommandsMap.put("Thumb", 3);
 
     }
 
@@ -71,62 +67,29 @@ public class Image extends HttpServlet {
      * response)
      */
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // TODO Auto-generated method stub
-        String args[] = Convertors.SplitRequestPath(request);
-        int command;
-        try {
-            command = (Integer) CommandsMap.get(args[1]);
-        } catch (Exception et) {
-            error("Bad Operator", response);
-            return;
-        }
-        switch (command) {
-            case 1:
-                DisplayImage(Convertors.DISPLAY_PROCESSED,args[2], response);
-                break;
-            case 2:
-                DisplayImageList(args[2], request, response);
-                break;
-            case 3:
-                DisplayImage(Convertors.DISPLAY_THUMB,args[2],  response);
-                break;
-            default:
-                error("Bad Operator", response);
-        }
+        
+        HttpSession session=request.getSession();
+        LoggedIn lg= (LoggedIn)session.getAttribute("LoggedIn");
+        if(lg != null){
+            if (lg.getlogedin()){
+                String args[] = Convertors.SplitRequestPath(request); //Borrowed from Image, takes arguments of URL and splits it so we can get the username
+                String picname = args[2];
+                UUID picuuid = UUID.fromString(picname);
+                PicModel picmod = new PicModel();
+                picmod.setCluster(cluster);
+                Pic showpic = picmod.getPic(Convertors.DISPLAY_PROCESSED, picuuid);
+                request.setAttribute("pic", showpic);
+                RequestDispatcher rd = request.getRequestDispatcher("/imagepage.jsp");
+                rd.forward(request, response);
+                } else {
+                response.sendRedirect("/Instagrim/login.jsp");
+            }
+        } else {
+            response.sendRedirect("/Instagrim/login.jsp");
+        } 
+              
     }
 
-    private void DisplayImageList(String User, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        PicModel tm = new PicModel();
-        tm.setCluster(cluster);
-        java.util.LinkedList<Pic> lsPics = tm.getPicsForUser(User);
-        RequestDispatcher rd = request.getRequestDispatcher("/UsersPics.jsp");
-        request.setAttribute("Pics", lsPics);
-        rd.forward(request, response);
-    }
-
-    private void DisplayImage(int type,String Image, HttpServletResponse response) throws ServletException, IOException {
-        PicModel tm = new PicModel();
-        tm.setCluster(cluster);
-  
-        
-        Pic p = tm.getPic(type,java.util.UUID.fromString(Image));
-        
-        OutputStream out = response.getOutputStream();
-
-        response.setContentType(p.getType());
-        response.setContentLength(p.getLength());
-        //out.write(Image);
-        
-        InputStream is = new ByteArrayInputStream(p.getBytes());
-        BufferedInputStream input = new BufferedInputStream(is);
-        byte[] buffer = new byte[8192];
-        for (int length = 0; (length = input.read(buffer)) > 0;) {
-            out.write(buffer, 0, length);
-        }
-        out.close();
-        
-        
-    }
     
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {

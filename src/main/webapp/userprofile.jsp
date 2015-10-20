@@ -50,38 +50,43 @@
         
        <%
             }
-            boolean isfollowing = (boolean)request.getAttribute("isfollowing");
-            if(isfollowing){
+            boolean loggedin = (boolean)request.getAttribute("loggedin");
+            if(loggedin){
+                boolean isfollowing = (boolean)request.getAttribute("isfollowing");
+                if(isfollowing){
         %>
-            <form method="POST">
-                <input type="submit" name="Follow" value="follow"> 
-            </form>
+                <form method="POST">
+                    <input type="submit" name="UnFollow" value="unfollow"> 
+                </form>
         <%
-            } else { 
+                } else { 
         %>  
-            <form method="POST">
-                <input type="submit" name="UnFollow" value="follow"> 
-            </form>
-        <%
-            }
-            java.util.Set<String> followerset = (java.util.Set<String>) request.getAttribute("followerSet");
-            if(followerset == null){
-        %>
-        <p>User has no followers.</p>
-        <%
-            } else { 
-        %>
-        <p> Followers:</p>
-        <% 
-                Iterator<String> iterator;
-                iterator = followerset.iterator();
-                
-                while (iterator.hasNext()) {
-                String follower = (String) iterator.next();
-        %> 
-        <p><%=follower%></p>
+                <form method="POST">
+                    <input type="submit" name="Follow" value="follow"> 
+                </form>
         <%
                 }
+                    java.util.Set<String> followerset = (java.util.Set<String>) request.getAttribute("followerSet");
+                    if(followerset == null){
+        %>
+            <p>User has no followers.</p>
+        <%
+                } else { 
+        %>
+            <p> Followers:</p>
+        <% 
+                    Iterator<String> iterator;
+                    iterator = followerset.iterator();
+
+                    while (iterator.hasNext()) {
+                    String follower = (String) iterator.next();
+        %> 
+            <p><%=follower%></p>
+        <%
+                    }
+                }
+            } else {
+                
             }
         %>
         </article>

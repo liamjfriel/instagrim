@@ -33,7 +33,7 @@ import java.util.LinkedList;
 import javax.imageio.ImageIO;
 import static org.imgscalr.Scalr.*;
 import org.imgscalr.Scalr.Method;
-
+import java.util.Map;
 import uk.ac.dundee.computing.aec.instagrim.lib.*;
 import uk.ac.dundee.computing.aec.instagrim.stores.Pic;
 //import uk.ac.dundee.computing.aec.stores.TweetStore;
@@ -135,7 +135,7 @@ public class PicModel {
     public java.util.LinkedList<Pic> getPicsForUser(String User) {
         java.util.LinkedList<Pic> Pics = new java.util.LinkedList<>();
         Session session = cluster.connect("instagrim");
-        PreparedStatement ps = session.prepare("select picid,user,pic_added from userpiclist where user =?");
+        PreparedStatement ps = session.prepare("select picid,user,pic_added,comments from userpiclist where user =?");
         ResultSet rs = null;
         BoundStatement boundStatement = new BoundStatement(ps);
         rs = session.execute( // this is where the query is executed
@@ -152,6 +152,8 @@ public class PicModel {
                 pic.setUUID(UUID);
                 //Set the uploaddate to the pic_added value
                 pic.setUploaddate(row.getDate("pic_added"));
+                //Set the comment to the comments in the picture
+                pic.setComments(row.getMap("comments", String.class, String.class));
                 //Set uploader to the "user" value of the row returned
                 pic.setUploader(row.getString("user"));
                 Pics.add(pic);
@@ -164,6 +166,9 @@ public class PicModel {
         Session session = cluster.connect("instagrim");
         ByteBuffer bImage = null;
         String type = null;
+        String uploader = null;
+        Date uploaddate = null;
+        Map<String,String> comments = null;
         int length = 0;
         try {
             Convertors convertor = new Convertors();
@@ -172,7 +177,7 @@ public class PicModel {
          
             if (image_type == Convertors.DISPLAY_IMAGE) {
                 
-                ps = session.prepare("select image,imagelength,type from pics where picid =?");
+                ps = session.prepare("select image,imagelength,type,comments,interaction_time,user from pics where picid =?");
             } else if (image_type == Convertors.DISPLAY_THUMB) {
                 ps = session.prepare("select thumb,imagelength,thumblength,type from pics where picid =?");
             } else if (image_type == Convertors.DISPLAY_PROCESSED) {
@@ -191,6 +196,9 @@ public class PicModel {
                     if (image_type == Convertors.DISPLAY_IMAGE) {
                         bImage = row.getBytes("image");
                         length = row.getInt("imagelength");
+                        uploaddate = row.getDate("interaction_time");
+                        comments = row.getMap("comments",String.class,String.class);
+                        uploader = row.getString("user");
                     } else if (image_type == Convertors.DISPLAY_THUMB) {
                         bImage = row.getBytes("thumb");
                         length = row.getInt("thumblength");
@@ -208,10 +216,13 @@ public class PicModel {
             System.out.println("Can't get Pic" + et);
             return null;
         }
+        //Close the session
         session.close();
+        //Create new Pic object called p
         Pic p = new Pic();
-        p.setPic(bImage, length, type);
-
+        //Set all the relevant fields in Picture class
+        p.setPic(bImage, length, type, uploaddate, comments, picid, uploader);
+        //Return p
         return p;
 
     }

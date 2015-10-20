@@ -37,8 +37,7 @@
                         <input type="text" name="searchquery">
                         <select name="searchby">
                             <option value="byname">by User Name</option>
-                            <option value="bysex">by Sex</option>
-                            <option value="byemail">by Email</option>
+                            <option value="picbyname">by Sex</option>
                         </select>
                     </li>
                     <li><input type="submit" name="SubmitSearch" value="Submit"></li>
@@ -47,31 +46,62 @@
             </form>
             
         <%
-            java.util.List<Map> results = (java.util.List<Map>) request.getAttribute("searchresult");
-            if(results == null){
+            String searchtype = (String) request.getAttribute("searchtype");
+            System.out.println(searchtype);
+            if(searchtype!= null){
+                switch(searchtype)
+                {
+                    case "byname":
+                    {
+                        java.util.List<Map> results = (java.util.List<Map>) request.getAttribute("searchresult");
+                        Iterator<Map> iterator;
+                        iterator = results.iterator();   
         %>
-        <p>No results.</p>
-        <%
-            } else {
-            Iterator<Map> iterator;
-            iterator = results.iterator();   
-        %>
-        <ul>
-        <%
-            while(iterator.hasNext()){ 
-            Map result = (Map) iterator.next();  
-            
-        %>
-        <li>
-            <a href="/Instagrim/Image/<%=result.get("profilepicid")%>"><img src="/Instagrim/Thumb/<%=result.get("profilepicid")%>" height="50" width="50"></a>
-            <a href="/Instagrim/profiles/<%=result.get("login")%>"><%=result.get("login")%></a>
-            Sex: <%=result.get("sex")%>
-        </li>   
-       <%
+                    <ul>
+                    <%
+                        while(iterator.hasNext()){ 
+                        Map result = (Map) iterator.next();  
+
+                    %>
+                        <li>
+                            <a href="/Instagrim/Image/<%=result.get("profilepicid")%>"><img src="/Instagrim/Thumb/<%=result.get("profilepicid")%>" height="50" width="50"></a>
+                            <a href="/Instagrim/profiles/<%=result.get("login")%>"><%=result.get("login")%></a>
+                            <i><%=result.get("description")%></i>
+                            Sex: <%=result.get("sex")%>
+                        </li>   
+                    <%
+                        }
+                    %>
+                    </ul>
+    <%
+                        break;
+                    }
+                    case "picbyname":
+                    {
+                        java.util.List<Pic> picresults = (java.util.List<Pic>) request.getAttribute("searchresult");
+                        Iterator<Pic> iterator;
+                        iterator = picresults.iterator();
+    %>
+                    <ul>
+    <%
+                        while (iterator.hasNext()) {
+                            Pic p = (Pic) iterator.next(); 
+    %>
+                        <li>
+                            <a href="/Instagrim/Image/<%=p.getSUUID()%>"><img src="/Instagrim/Thumb/<%=p.getSUUID()%>" height="50" width="50"></a>
+                            <a href="/Instagrim/profiles/<%=p.getUploader()%>">by <%=p.getUploader()%></a>
+                            on <%=p.getUploaddate()%>
+                        </li>             
+    <%
+                        }
+                        
+    %>
+                     </ul>
+    <%                 break; 
+                    }
+                }
             }
-            }
-        %>
-            
+    %>
 
         </article>
         <footer>
