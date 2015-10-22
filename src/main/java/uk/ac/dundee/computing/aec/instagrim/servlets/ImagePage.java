@@ -75,9 +75,17 @@ public class ImagePage extends HttpServlet {
                 String args[] = Convertors.SplitRequestPath(request); //Borrowed from Image, takes arguments of URL and splits it so we can get the username
                 String picname = args[2];
                 UUID picuuid = UUID.fromString(picname);
+                //New picture model called picmod
                 PicModel picmod = new PicModel();
+                //Set the cluster in that class
                 picmod.setCluster(cluster);
-                Pic showpic = picmod.getPic(Convertors.DISPLAY_PROCESSED, picuuid);
+                //Comment map  equals the one we get from picmodel
+                List<Map> commentlist = picmod.getComments(picuuid);
+                //Showpic pic object equals the return of the getmap method from picmod
+                Pic showpic = picmod.getPic(Convertors.DISPLAY_IMAGE, picuuid);
+                //Set the attribute comments to the the comments we got from the picmodel
+                request.setAttribute("comments", commentlist);
+                //Set the attribute pic to the the picture we got from the picmodel
                 request.setAttribute("pic", showpic);
                 RequestDispatcher rd = request.getRequestDispatcher("/imagepage.jsp");
                 rd.forward(request, response);
@@ -93,34 +101,39 @@ public class ImagePage extends HttpServlet {
     
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        for (Part part : request.getParts()) {
-            System.out.println("Part Name " + part.getName());
-
-            String type = part.getContentType();
-            String filename = part.getSubmittedFileName();
-            
-            InputStream is = request.getPart(part.getName()).getInputStream();
-            int i = is.available();
-            HttpSession session=request.getSession();
-            LoggedIn lg= (LoggedIn)session.getAttribute("LoggedIn");
-            String username="majed";
+        HttpSession session=request.getSession();
+        LoggedIn lg= (LoggedIn)session.getAttribute("LoggedIn");
+        //If logged in
+        if(lg != null){
+            //If getloggedin returns true
             if (lg.getlogedin()){
-                username=lg.getUsername();
-            }
-            if (i > 0) {
-                byte[] b = new byte[i + 1];
-                is.read(b);
-                System.out.println("Length : " + b.length);
-                PicModel tm = new PicModel();
-                tm.setCluster(cluster);
-                tm.insertPic(b, type, filename, username);
+                //Borrowed from Image, takes arguments of URL and splits it so we can get the username
+                String args[] = Convertors.SplitRequestPath(request); 
+                //String picname equals the end of the url              
+                String picname= args[2];
+                //Set UUID to picstringid converted to UUID from string
+                UUID picid = UUID.fromString(picname);
+                //String comment equals the value of the comment text box
+                String comment=request.getParameter("commentext");
+                //String uploader equals the value of the hidden uploader field
+                String uploader=request.getParameter("uploader");
+                //New picture model called picmod
+                PicModel picmod = new PicModel();
+                //Set the cluster in that class
+                picmod.setCluster(cluster);
+                //Write the comment to the database, passing the picid, comment text and pic uploader
+                picmod.addComment(picid, uploader, comment);
+                //Go back to the URL we came from
+                response.sendRedirect(request.toString());
 
-                is.close();
+                } else {
+                //Not logged in, send them to login page
+                response.sendRedirect("/Instagrim/login.jsp");
             }
-            RequestDispatcher rd = request.getRequestDispatcher("/upload.jsp");
-             rd.forward(request, response);
-        }
-
+        } else {
+            //Login object doesn't even exist, so not logged in, send them to login page
+            response.sendRedirect("/Instagrim/login.jsp");
+        } 
     }
 
     private void error(String mess, HttpServletResponse response) throws ServletException, IOException {

@@ -28,8 +28,13 @@ public final class Keyspaces {
                     + " processedlength int,"
                     + " type  varchar,"
                     + " name  varchar,"
+                    + " comments map<timestamp, frozen <piccomment>>,"
                     + " PRIMARY KEY (picid)"
                     + ")";
+            String CreatePicCommentType = "CREATE TYPE if not exists instagrim.piccomment (\n"
+                    + "      author text,\n"
+                    + "      comment text\n"
+                    + "  );";
             String Createuserpiclist = "CREATE TABLE if not exists instagrim.userpiclist (\n"
                     + "picid uuid,\n"
                     + "user varchar,\n"
@@ -91,6 +96,13 @@ public final class Keyspaces {
                 session.execute(cqlQuery);
             } catch (Exception et) {
                 System.out.println("Can't create Address type " + et);
+            }
+            System.out.println("" + CreatePicCommentType);
+            try {
+                SimpleStatement cqlQuery = new SimpleStatement(CreatePicCommentType);
+                session.execute(cqlQuery);
+            } catch (Exception et) {
+                System.out.println("Can't create PicComment type " + et);
             }
             System.out.println("" + CreateUserProfile);
             try {

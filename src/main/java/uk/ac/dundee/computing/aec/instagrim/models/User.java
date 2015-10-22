@@ -240,9 +240,6 @@ public class User {
                    actualuserinformation.put("Town", address.getCity()); //Put
                    actualuserinformation.put("Country", address.getCountry());
                }
-              //  Addresses addresses = mappingsession.getFromRow(Addresses.class, row);
-                
-              //  addresses = mappingsession.get(Addresses.class,4);
                 
                 actualuserinformation.put("FirstName", row.getString(0));
                 actualuserinformation.put("SecondName", row.getString(1));

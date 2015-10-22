@@ -18,7 +18,10 @@ import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.UDTValue;
 import com.datastax.driver.core.utils.Bytes;
+import com.datastax.driver.mapping.MappingManager;
+import com.datastax.driver.mapping.UDTMapper;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -34,8 +37,11 @@ import javax.imageio.ImageIO;
 import static org.imgscalr.Scalr.*;
 import org.imgscalr.Scalr.Method;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.UUID;
 import uk.ac.dundee.computing.aec.instagrim.lib.*;
 import uk.ac.dundee.computing.aec.instagrim.stores.Pic;
+import java.util.List;
 //import uk.ac.dundee.computing.aec.stores.TweetStore;
 
 public class PicModel {
@@ -152,14 +158,94 @@ public class PicModel {
                 pic.setUUID(UUID);
                 //Set the uploaddate to the pic_added value
                 pic.setUploaddate(row.getDate("pic_added"));
-                //Set the comment to the comments in the picture
-                pic.setComments(row.getMap("comments", String.class, String.class));
                 //Set uploader to the "user" value of the row returned
                 pic.setUploader(row.getString("user"));
                 Pics.add(pic);
             }
         }
         return Pics;
+    }
+    
+    public void addComment(UUID picid, String username, String comment)
+    {
+        //Connect to cluster instagrim
+        Session session = cluster.connect("instagrim");
+        //UDT mapper
+        UDTMapper<PicComment> mapper = new MappingManager(session).udtMapper(PicComment.class);
+        //Declare new object of class piccomment
+        PicComment piccomment = new PicComment();
+        //Set the fields in this class
+        piccomment.setPicComment(username, comment);
+        //Create a map with timestamp and piccomment
+        Map<Date,UDTValue> commentfordatabase = new HashMap();
+        //Get new date for this time
+        Date datetoadd = new Date();
+        //Add the timestamp and comment mapped to udt to our mapp
+        commentfordatabase.put(datetoadd, mapper.toUDT(piccomment));
+        //Result set set to null, this will be set properly in the switch below
+        ResultSet rs = null; 
+        //Preparedstatement object equals a prepared statement
+        PreparedStatement ps = session.prepare("update pics set comments = comments + ? where picid=?"); //Because this is a set, we don't really have to worry if the record already exists in there
+        //As casandra does not duplicate the values
+        BoundStatement boundStatement = new BoundStatement(ps); // Create new boundstatement object
+        
+        //Execute our prepared statement
+        session.execute( 
+                boundStatement.bind( 
+                    //Bind the variables commentmap and picid
+                        commentfordatabase,picid));
+    }
+    
+    public List getComments(java.util.UUID picid)
+    {
+        //List of comments
+        List<Map> commentlist = new LinkedList();
+        //Connect to cluster instagrim
+        Session session = cluster.connect("instagrim");
+        //Result set set to null, this will be set properly in the switch below
+        ResultSet rs = null; 
+        //Preparedstatement object equals a prepared statement
+        PreparedStatement ps = session.prepare("select comments from pics where picid = ?"); //Because this is a set, we don't really have to worry if the record already exists in there
+        //As casandra does not duplicate the values
+        BoundStatement boundStatement = new BoundStatement(ps);
+        //This is where the query is expected
+        rs = session.execute(
+            // here you are binding the 'boundStatement'
+            boundStatement.bind(
+            //Our passed picid
+                picid));
+        
+        //If there's nothing in the resultset
+        if (rs.isExhausted() || rs == null) { 
+            //Print that there is no users found
+            System.out.println("User not found."); 
+            //Return null
+            return null; 
+        //Otherwise
+        } else { 
+            //For every row 
+            for (Row row : rs) {
+                //Map that we will add to the list
+                Map<Date,PicComment> realmap = new HashMap();
+                //UDT mapper
+                UDTMapper<PicComment> mapper = new MappingManager(session).udtMapper(PicComment.class);
+                //Set our tempcommentmap to the map in the row
+                Map<Date,UDTValue> tempcommentmap = row.getMap("comments", Date.class, UDTValue.class);
+                //Loop through every entry in the map (aka the one and only one) 
+                for (Map.Entry<Date,UDTValue> entry : tempcommentmap.entrySet()){
+                    //Set our new map that we will put in the list with piccomment type and not UDTValue
+                    PicComment commentforlist = mapper.fromUDT(entry.getValue());
+                    //Add the data retrieved to our map that will be added to the list
+                    realmap.put(entry.getKey(), commentforlist);
+                }
+                
+                //Add the commentmap to the list
+                commentlist.add(realmap);
+             }
+            //Return the list
+            return commentlist;
+        }
+       
     }
 
     public Pic getPic(int image_type, java.util.UUID picid) {
@@ -177,7 +263,7 @@ public class PicModel {
          
             if (image_type == Convertors.DISPLAY_IMAGE) {
                 
-                ps = session.prepare("select image,imagelength,type,comments,interaction_time,user from pics where picid =?");
+                ps = session.prepare("select image,imagelength,type,interaction_time,user from pics where picid =?");
             } else if (image_type == Convertors.DISPLAY_THUMB) {
                 ps = session.prepare("select thumb,imagelength,thumblength,type from pics where picid =?");
             } else if (image_type == Convertors.DISPLAY_PROCESSED) {
@@ -197,7 +283,6 @@ public class PicModel {
                         bImage = row.getBytes("image");
                         length = row.getInt("imagelength");
                         uploaddate = row.getDate("interaction_time");
-                        comments = row.getMap("comments",String.class,String.class);
                         uploader = row.getString("user");
                     } else if (image_type == Convertors.DISPLAY_THUMB) {
                         bImage = row.getBytes("thumb");
@@ -221,7 +306,7 @@ public class PicModel {
         //Create new Pic object called p
         Pic p = new Pic();
         //Set all the relevant fields in Picture class
-        p.setPic(bImage, length, type, uploaddate, comments, picid, uploader);
+        p.setPic(bImage, length, type, uploaddate, picid, uploader);
         //Return p
         return p;
 

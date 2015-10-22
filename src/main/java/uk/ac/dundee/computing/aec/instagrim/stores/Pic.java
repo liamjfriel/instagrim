@@ -23,7 +23,6 @@ public class Pic {
     private UUID UUID=null;
     private String uploader;
     private Date uploaddate;
-    private Map<String,String> comments;
     
     public void Pic() {
 
@@ -34,12 +33,11 @@ public class Pic {
     public String getSUUID(){
         return UUID.toString();
     }
-    public void setPic(ByteBuffer bImage, int length,String type, Date uploaddate, Map comments, UUID picid, String uploader) {
+    public void setPic(ByteBuffer bImage, int length,String type, Date uploaddate, UUID picid, String uploader) {
         this.bImage = bImage;
         this.length = length;
         this.type=type;
         this.uploaddate = uploaddate;
-        this.comments = comments;
         this.UUID = picid;
         this.uploader = uploader;
     }
@@ -78,6 +76,7 @@ public class Pic {
         this.uploaddate = uploaddate;
     }
     
+    /*
     public void setComments(Map comments){
         this.comments = comments;
     }
@@ -86,5 +85,5 @@ public class Pic {
         return comments;
     }
 
-    
+    */
 }
