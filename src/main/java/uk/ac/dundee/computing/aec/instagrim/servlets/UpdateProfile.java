@@ -63,11 +63,13 @@ public class UpdateProfile extends HttpServlet {
             String city=request.getParameter("city");
             String zip=request.getParameter("zip");
             String country=request.getParameter("country");
+            HttpSession session=request.getSession();
+            LoggedIn lg= (LoggedIn)session.getAttribute("LoggedIn");
             User us=new User();
             us.setCluster(cluster);
-            us.updateUser(username, password,firstname,lastname,email,sex,dob,streetname,city,zip,country);
+            us.updateUser(lg.getUsername(), password,firstname,lastname,email,sex,dob,streetname,city,zip,country);
             //Send them to the profile page of the user
-            response.sendRedirect("/Instagrim/profiles" + username);
+            response.sendRedirect("/Instagrim/profiles" + lg.getUsername());
         }
         
     }

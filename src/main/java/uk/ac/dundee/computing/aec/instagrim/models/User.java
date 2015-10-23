@@ -52,17 +52,30 @@ public class User {
             System.out.println("Can't check your password");
             return false;
         }
+        //Use instagrim keyspace
         Session session = cluster.connect("instagrim");
+        
        // Syntax wise, this should work. However for some reason it does not. 
-       // PreparedStatement ps = session.prepare("insert into userprofiles (login,password,first_name,last_name,email,sex,addresses) Values (?,?,?,?,?,?,{'home':{street:?,city:?,zip:?,country:?}})");
-        //So instead, we'll do this which probably allows for CQL injection. This will be fixed eventually.
-        PreparedStatement ps = session.prepare("insert into userprofiles (login,password,first_name,last_name,email,sex,dob,addresses) Values(?,?,?,?,?,?,?,{'home':{street:'"+streetname+"',city:'"+city+"',zip:'"+zip+"',country:'"+country+"'}}) IF NOT EXISTS");
-       
+       // PreparedStatement ps = session.prepare("insert into userprofiles (login,password,first_name,last_name,email,sex,addresses) Values (?,?,?,?,?,?,{'home':{street:?,city:?,zip:?,country:?}})")
+        PreparedStatement ps = session.prepare("insert into userprofiles (login,password,first_name,last_name,email,sex,dob,addresses) Values(?,?,?,?,?,?,?,?) IF NOT EXISTS");
+       //Address object created, set all the fields in it
+        Addresses useraddress = new Addresses();
+        //Set the address object with all the passed data 
+        useraddress.setAddresses(streetname, city, zip, country);
+        //Create udtmapper class
+        UDTMapper<Addresses> mapper = new MappingManager(session).udtMapper(Addresses.class);
+        //Hashmap object of type String and UDT value created
+        Map<String,UDTValue> addressmap = new HashMap();
+        //Put key "home" and the address class converted to the relevant UDT into the map
+        addressmap.put("home",mapper.toUDT(useraddress));
+        //New object of boundstatment
         BoundStatement boundStatement = new BoundStatement(ps);
-        session.execute( // this is where the query is executed
+        //Execute our boundstatement
+        session.execute(
+                //Bind the values
                 boundStatement.bind( // here you are binding the 'boundStatement'
                    //     username,EncodedPassword,firstname,lastname,email,sex,streetname,city,zip,country));
-                        username,EncodedPassword,firstname, lastname, email, sex,dob));
+                        username,EncodedPassword,firstname, lastname, email, sex,dob,addressmap));
         //We are assuming this always works.  Also a transaction would be good here !
         
         return true;
@@ -76,16 +89,16 @@ public class User {
         Addresses useraddress = new Addresses();
         //Set the address object with all the passed data 
         useraddress.setAddresses(streetname, city, zip, country);
-        //Create udtmapper class
-        UDTMapper<Addresses> mapper = new MappingManager(session).udtMapper(Addresses.class);
         //New object that will be used to encrpyt password with SHA1
         AeSimpleSHA1 sha1handler=  new AeSimpleSHA1();
         //String encoded password which will be used as the output of the SHA1 encryption
         String EncodedPassword=null;
-        //Create map for addresses field in database
+        //Create udtmapper class
+        UDTMapper<Addresses> mapper = new MappingManager(session).udtMapper(Addresses.class);
+        //Hashmap object of type String and UDT value created
         Map<String,UDTValue> addressmap = new HashMap();
-        //Put our address in the map
-        addressmap.put("home",mapper.toUDT(useraddress));
+        //Put key "home" and the address class converted to the relevant UDT into the map
+        addressmap.put("home",mapper.toUDT(useraddress));;
         //Try
         try {
             //Encode the password to SHA1
@@ -101,7 +114,7 @@ public class User {
         session.execute( // this is where the query is executed
                 boundStatement.bind( // here you are binding the 'boundStatement'
                    //     username,EncodedPassword,firstname,lastname,email,sex,streetname,city,zip,country));
-                        password,firstname,lastname,email,sex,dob,addressmap));
+                        password,firstname,lastname,email,sex,dob,addressmap,username));
     }
     
     public void followUser(String follower, String followtarget)
