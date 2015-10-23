@@ -9,6 +9,8 @@ package uk.ac.dundee.computing.aec.instagrim.servlets;
 import com.datastax.driver.core.Cluster;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Map;
+import java.util.Set;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -16,8 +18,11 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import uk.ac.dundee.computing.aec.instagrim.lib.CassandraHosts;
+import uk.ac.dundee.computing.aec.instagrim.lib.Convertors;
 import uk.ac.dundee.computing.aec.instagrim.models.User;
+import uk.ac.dundee.computing.aec.instagrim.stores.LoggedIn;
 
 /**
  *
@@ -62,6 +67,35 @@ public class Register extends HttpServlet {
         
 	response.sendRedirect("/Instagrim");
         
+    }
+    
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+            
+        HttpSession session=request.getSession();
+        LoggedIn lg= (LoggedIn)session.getAttribute("LoggedIn");
+        if(lg != null){
+            if (lg.getlogedin()){
+                String args[] = Convertors.SplitRequestPath(request); //Borrowed from Image, takes arguments of URL and splits it so we can get the username
+                String username = args[2];
+                User usersprofile = new User(); //Create new user object
+                usersprofile.setCluster(cluster); //Set the cluster in this user class to the one we are sending
+                Map<String,String> userinfo = usersprofile.UserInfoMap(username); //Set our map to the one we get from the user model, which is retrieved from the database
+                RequestDispatcher rd = request.getRequestDispatcher("/userprofile.jsp"); //Get the request dispatcher from useprrofile
+                request.setAttribute("InfoMap", userinfo); //Set the attribute of infomap to the map we just created
+                boolean loggedin = true;
+                request.setAttribute("loggedin", loggedin);
+                String logedinname=lg.getUsername();
+                Set<String> set = usersprofile.followerSet(username);
+                request.setAttribute("followerSet", set);
+                boolean isfollowing = usersprofile.isFollowing(logedinname,username);
+                request.setAttribute("isfollowing", isfollowing);
+                rd.forward(request, response);
+                } else {
+                response.sendRedirect("/login.jsp");
+            }
+        } else {
+            response.sendRedirect("/Instagrim/login.jsp");
+        } 
     }
 
     /**

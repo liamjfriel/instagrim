@@ -68,6 +68,42 @@ public class User {
         return true;
     }
     
+    public void updateUser(String username, String password, String firstname, String lastname, String email, String sex, String dob, String streetname, String city, String zip, String country)
+    {
+        //Connect to cluster instagrim
+        Session session = cluster.connect("instagrim");
+        //Address object created, set all the fields in it
+        Addresses useraddress = new Addresses();
+        //Set the address object with all the passed data 
+        useraddress.setAddresses(streetname, city, zip, country);
+        //Create udtmapper class
+        UDTMapper<Addresses> mapper = new MappingManager(session).udtMapper(Addresses.class);
+        //New object that will be used to encrpyt password with SHA1
+        AeSimpleSHA1 sha1handler=  new AeSimpleSHA1();
+        //String encoded password which will be used as the output of the SHA1 encryption
+        String EncodedPassword=null;
+        //Create map for addresses field in database
+        Map<String,UDTValue> addressmap = new HashMap();
+        //Put our address in the map
+        addressmap.put("home",mapper.toUDT(useraddress));
+        //Try
+        try {
+            //Encode the password to SHA1
+            EncodedPassword= sha1handler.SHA1(password);
+        }catch (UnsupportedEncodingException | NoSuchAlgorithmException et){
+            System.out.println("Can't check your password");
+        }
+        //Create prepared statement that will be used to update
+        PreparedStatement ps = session.prepare("update userprofiles set password = ?, first_name = ?, last_name = ?, email = ?, sex = ?, dob = ?, addresses = ? where login=?"); 
+        //As casandra does not duplicate the values
+        BoundStatement boundStatement = new BoundStatement(ps); // Create new boundstatement object
+        //Execute bound statement
+        session.execute( // this is where the query is executed
+                boundStatement.bind( // here you are binding the 'boundStatement'
+                   //     username,EncodedPassword,firstname,lastname,email,sex,streetname,city,zip,country));
+                        password,firstname,lastname,email,sex,dob,addressmap));
+    }
+    
     public void followUser(String follower, String followtarget)
     {
         
@@ -78,15 +114,11 @@ public class User {
         PreparedStatement ps = session.prepare("update userprofiles set followers = followers + ? where login=?"); //Because this is a set, we don't really have to worry if the record already exists in there
         //As casandra does not duplicate the values
         BoundStatement boundStatement = new BoundStatement(ps); // Create new boundstatement object
-        
-       // Syntax wise, this should work. However for some reason it does not. 
-       // PreparedStatement ps = session.prepare("insert into userprofiles (login,password,first_name,last_name,email,sex,addresses) Values (?,?,?,?,?,?,{'home':{street:?,city:?,zip:?,country:?}})");
-        //So instead, we'll do this which probably allows for CQL injection. This will be fixed eventually.
+        //Execute bound statement
         session.execute( // this is where the query is executed
                 boundStatement.bind( // here you are binding the 'boundStatement'
                    //     username,EncodedPassword,firstname,lastname,email,sex,streetname,city,zip,country));
                         set,followtarget));
- 
     }
     
     
@@ -134,9 +166,6 @@ public class User {
         PreparedStatement ps = session.prepare("select login,description,sex,profilepictureid from userprofiles where login =?"); //Because this is a set, we don't really have to worry if the record already exists in there
         //As casandra does not duplicate the values
         BoundStatement boundStatement = new BoundStatement(ps); // Create new boundstatement object
-        // Syntax wise, this should work. However for some reason it does not. 
-        // PreparedStatement ps = session.prepare("insert into userprofiles (login,password,first_name,last_name,email,sex,addresses) Values (?,?,?,?,?,?,{'home':{street:?,city:?,zip:?,country:?}})");
-        //So instead, we'll do this which probably allows for CQL injection. This will be fixed eventually.
         rs = session.execute( // this is where the query is executed
             boundStatement.bind( // here you are binding the 'boundStatement'
             //     username,EncodedPassword,firstname,lastname,email,sex,streetname,city,zip,country));
@@ -178,9 +207,6 @@ public class User {
                 boundStatement.bind( // here you are binding the 'boundStatement'
                    //     username,EncodedPassword,firstname,lastname,email,sex,streetname,city,zip,country));
                         set,followtarget));
-        
-        
- 
     }
     //Return a set with all followers
     public Set<String> followerSet(String username){
@@ -216,7 +242,7 @@ public class User {
                 //Declare the hashmap we will return
          //Start new session and connect to cluster
         
-        PreparedStatement ps = session.prepare("select first_name,last_name,sex,dob,addresses,followers,profilepictureid from userprofiles where login =?");
+        PreparedStatement ps = session.prepare("select first_name,last_name,sex,dob,addresses,followers,profilepictureid,email from userprofiles where login =?");
         ResultSet rs = null; //Declare a new result set object
         BoundStatement boundStatement = new BoundStatement(ps); // Create new boundstatement object
         rs = session.execute( // this is where the query is executed
@@ -237,8 +263,10 @@ public class User {
                
                for(String key : addresses.keySet()) {
                    Addresses address = mapper.fromUDT(addresses.get(key));
+                   actualuserinformation.put("Street", address.getStreet()); 
                    actualuserinformation.put("Town", address.getCity()); //Put
                    actualuserinformation.put("Country", address.getCountry());
+                   actualuserinformation.put("Zip", address.getZip());
                }
                 //Put the following strings from the row into the map
                 actualuserinformation.put("FirstName", row.getString(0));
@@ -246,6 +274,7 @@ public class User {
                 actualuserinformation.put("Sex", row.getString(2));
                 actualuserinformation.put("DOB", row.getString(3));
                 actualuserinformation.put("ProfilePic", row.getString(6));
+                actualuserinformation.put("Email", row.getString(7));
                 
                 return actualuserinformation;
             }

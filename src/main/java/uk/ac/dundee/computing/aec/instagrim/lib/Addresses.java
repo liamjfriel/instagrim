@@ -32,6 +32,13 @@ public class Addresses {
         
         }
         
+        public void setAddresses(String street, String city, String zip, String country){
+            this.street = street;
+            this.city = city;
+            this.zip = zip;
+            this.country = country;
+        }
+        
         public String getStreet()
         {
             return street;
