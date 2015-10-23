@@ -64,9 +64,11 @@ public class UserProfiles extends HttpServlet {
                         username=lg.getUsername(); //Set the variable username to the users logged in username
                         String args[] = Convertors.SplitRequestPath(request); //Borrowed from Image, takes arguments of URL and splits it so we can get the username
                         String followtarget = args[2]; //This is our target for following
-                        
+                        //Make user object
                         User user = new User();
+                        //Set the cluster in the user object to the cluster we pass
                         user.setCluster(cluster);
+                        //Call the follower user method in user class
                         user.followUser(username,followtarget);
                         //RequestDispatcher rd=request.getRequestDispatcher("/profiles/" + followtarget);
                        // rd.forward(null,response); 

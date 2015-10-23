@@ -74,6 +74,7 @@ public class ImagePage extends HttpServlet {
             if (lg.getlogedin()){
                 String args[] = Convertors.SplitRequestPath(request); //Borrowed from Image, takes arguments of URL and splits it so we can get the username
                 String picname = args[2];
+                //UUID picuid is the converted picname from url
                 UUID picuuid = UUID.fromString(picname);
                 //New picture model called picmod
                 PicModel picmod = new PicModel();
@@ -87,6 +88,10 @@ public class ImagePage extends HttpServlet {
                 request.setAttribute("comments", commentlist);
                 //Set the attribute pic to the the picture we got from the picmodel
                 request.setAttribute("pic", showpic);
+                //Boolean canprofilepic 
+                boolean canprofilepic = canBeProfilePicture(lg, showpic);
+                //Set the attribute of canprofilepic to the return value of our function
+                request.setAttribute("canprofilepic", canprofilepic);
                 RequestDispatcher rd = request.getRequestDispatcher("/imagepage.jsp");
                 rd.forward(request, response);
                 } else {
@@ -98,7 +103,17 @@ public class ImagePage extends HttpServlet {
               
     }
 
-    
+    //This returns true or false based off whether the uploader is also the logged in user
+    private boolean canBeProfilePicture(LoggedIn lg, Pic pictocheck){
+        //If the user that is logged in is the same person that uploaded the picture
+        if(lg.getUsername().equals(pictocheck.getUploader()))
+        {
+            //Return true
+            return true;
+        }
+        //Getting this far means that it's not the case, we could also do else here if we wanted
+        return false;
+    }
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session=request.getSession();
@@ -109,22 +124,36 @@ public class ImagePage extends HttpServlet {
             if (lg.getlogedin()){
                 //Borrowed from Image, takes arguments of URL and splits it so we can get the username
                 String args[] = Convertors.SplitRequestPath(request); 
-                //String picname equals the end of the url              
+                //String picname equa ls the end of the url              
                 String picname= args[2];
-                //Set UUID to picstringid converted to UUID from string
-                UUID picid = UUID.fromString(picname);
-                //String comment equals the value of the comment text box
-                String comment=request.getParameter("commentext");
-                //String uploader equals the value of the hidden uploader field
-                String uploader=request.getParameter("uploader");
-                //New picture model called picmod
-                PicModel picmod = new PicModel();
-                //Set the cluster in that class
-                picmod.setCluster(cluster);
-                //Write the comment to the database, passing the picid, comment text and pic uploader
-                picmod.addComment(picid, uploader, comment);
-                //Go back to the URL we came from
-                response.sendRedirect(request.toString());
+                //If the user push the submit comment button
+                if(request.getParameter("commentsubmit") != null){
+                    //Set UUID to picstringid converted to UUID from string
+                    UUID picid = UUID.fromString(picname);
+                    //String comment equals the value of the comment text box
+                    String comment=request.getParameter("commentext");
+                    //String uploader equals the value of the hidden uploader field
+                    String uploader=request.getParameter("uploader");
+                    //New picture model called picmod
+                    PicModel picmod = new PicModel();
+                    //Set the cluster in that class
+                    picmod.setCluster(cluster);
+                    //Write the comment to the database, passing the picid, comment text and pic uploader
+                    picmod.addComment(picid, lg.getUsername(), comment);
+                    //Go back to the URL we came from
+                    response.sendRedirect(request.toString());
+                }
+                //If the user clicked "makeprofile"
+                if(request.getParameter("makeprofile") != null){
+                    //Create new user object
+                    User user = new User();
+                    //Set the cluster in that class
+                    user.setCluster(cluster);
+                    //Set the usersprofile pic
+                    user.setProfilePic(picname,lg.getUsername());
+                    //Send redirect to usersprofle
+                    response.sendRedirect("/Instagrim/profiles/" + lg.getUsername());
+                }
 
                 } else {
                 //Not logged in, send them to login page

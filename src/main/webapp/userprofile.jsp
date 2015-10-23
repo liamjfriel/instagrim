@@ -39,6 +39,20 @@
         <p>User profile does not exist!</p>
         <%
         } else {
+                //If the user hsa not set a profile picture yet
+                if(userinfo.get("ProfilePic") == null)
+                {
+                //Tell the user that they have not set a profile picture and should do so
+        %>
+        <p>You have not set a profile picture! Go to one of your images and press "make profile picture"!</p>
+        <%
+                } else {
+                //Show the profile picture picture
+        %>
+        <p>Profile picture:</p>
+        <a href="/Instagrim/Image/<%=userinfo.get("ProfilePic")%>"><img src="/Instagrim/Thumb/<%=userinfo.get("ProfilePic")%>"></a>
+        <%
+                }
         %>
         <p>First Name: <%=userinfo.get("FirstName")%></p>
         <p>Second Name: <%=userinfo.get("SecondName")%></p>
@@ -47,9 +61,8 @@
         <p>Town: <%=userinfo.get("Town")%></p>
         <p>Country: <%=userinfo.get("Country")%></p>
         <br/>
-        
        <%
-            }
+        }
             boolean loggedin = (boolean)request.getAttribute("loggedin");
             if(loggedin){
                 boolean isfollowing = (boolean)request.getAttribute("isfollowing");

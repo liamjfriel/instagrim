@@ -216,7 +216,7 @@ public class User {
                 //Declare the hashmap we will return
          //Start new session and connect to cluster
         
-        PreparedStatement ps = session.prepare("select first_name,last_name,sex,dob,addresses,followers from userprofiles where login =?");
+        PreparedStatement ps = session.prepare("select first_name,last_name,sex,dob,addresses,followers,profilepictureid from userprofiles where login =?");
         ResultSet rs = null; //Declare a new result set object
         BoundStatement boundStatement = new BoundStatement(ps); // Create new boundstatement object
         rs = session.execute( // this is where the query is executed
@@ -240,11 +240,12 @@ public class User {
                    actualuserinformation.put("Town", address.getCity()); //Put
                    actualuserinformation.put("Country", address.getCountry());
                }
-                
+                //Put the following strings from the row into the map
                 actualuserinformation.put("FirstName", row.getString(0));
                 actualuserinformation.put("SecondName", row.getString(1));
                 actualuserinformation.put("Sex", row.getString(2));
                 actualuserinformation.put("DOB", row.getString(3));
+                actualuserinformation.put("ProfilePic", row.getString(6));
                 
                 return actualuserinformation;
             }
@@ -299,11 +300,23 @@ public class User {
                     return true;
             }
         }
-   
-    
     return false;  
     }
-       public void setCluster(Cluster cluster) {
+    
+    public void setProfilePic(String pic, String user){
+        //Connect to the keyspace instagrim
+        Session session = cluster.connect("instagrim");
+        //Create prepared statement where we enter the profilepic id to the user
+        PreparedStatement ps = session.prepare("update userprofiles set profilepictureid = ? where login=?");
+        //Create boundstatement
+        BoundStatement boundStatement = new BoundStatement(ps);
+        //Execute our boundstatement
+        session.execute(
+                boundStatement.bind(
+                        pic, user));
+    }
+    
+    public void setCluster(Cluster cluster) {
         this.cluster = cluster;
     }
 

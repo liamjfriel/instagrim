@@ -186,7 +186,7 @@ public class PicModel {
         ResultSet rs = null; 
         //Preparedstatement object equals a prepared statement
         PreparedStatement ps = session.prepare("update pics set comments = comments + ? where picid=?"); //Because this is a set, we don't really have to worry if the record already exists in there
-        //As casandra does not duplicate the values
+        //As casandra does not duplicoginate the values
         BoundStatement boundStatement = new BoundStatement(ps); // Create new boundstatement object
         
         //Execute our prepared statement

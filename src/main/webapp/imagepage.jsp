@@ -49,8 +49,19 @@
                 <input type="submit" name="commentsubmit" value="Submit"> 
                 <input type="hidden" name="uploader" value="<%=pictoshow.getUploader()%>">
             </form>
+        <%
+            boolean canbeprofilepic = (boolean) request.getAttribute("canprofilepic");
+            //If canbeprofilepic is true
+            if(canbeprofilepic)
+            {
+                //Then show the button that would allow the user to make this their profile pic
+        %>
+                <form method="POST">
+                <input type="submit" name="makeprofile" value="Make profile picture"> 
+                </form>
         <ul>
         <%
+            }
             java.util.LinkedList<Map> commentlist = (java.util.LinkedList<Map>) request.getAttribute("comments");
             Iterator<Map> iterator;
             iterator = commentlist.iterator();
@@ -60,8 +71,9 @@
                     for (Map.Entry<Date,PicComment> entry : commentmap.entrySet())
                     {
         %>
-                    <li><h5>Comment by <%=entry.getValue().getAuthor()%> on <%=entry.getKey()%>: <%=entry.getValue().getComment()%></h5><li>
-        <%
+                    <li><h5>Comment by <%=entry.getValue().getAuthor()%> on <%=entry.getKey()%>:</h5></li>
+                    <li><h5><%=entry.getValue().getComment()%></h5></li>
+       <%
                     }
             }
         }
