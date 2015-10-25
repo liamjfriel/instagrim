@@ -25,7 +25,7 @@ import com.datastax.driver.mapping.UDTMapper;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-
+import java.util.Collections;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -37,7 +37,7 @@ import javax.imageio.ImageIO;
 import static org.imgscalr.Scalr.*;
 import org.imgscalr.Scalr.Method;
 import java.util.Map;
-import java.util.HashMap;
+import java.util.TreeMap;
 import java.util.Iterator;
 import java.util.UUID;
 import uk.ac.dundee.computing.aec.instagrim.lib.*;
@@ -246,6 +246,7 @@ public class PicModel {
         User us = new User();
         //Set the cluster
         us.setCluster(cluster);
+        
         //If picid is the same as the users profile picture
         if(picid.equals(us.getProfilePic(username))){
             //Set the profile pic to null
@@ -283,7 +284,7 @@ public class PicModel {
         //Set the fields in this class
         piccomment.setPicComment(username, comment);
         //Create a map with timestamp and piccomment
-        Map<Date,UDTValue> commentfordatabase = new HashMap();
+        Map<Date,UDTValue> commentfordatabase = new TreeMap(Collections.reverseOrder());
         //Get new date for this time
         Date datetoadd = new Date();
         //Add the timestamp and comment mapped to udt to our mapp
@@ -332,7 +333,7 @@ public class PicModel {
             //For every row 
             for (Row row : rs) {
                 //Map that we will add to the list
-                Map<Date,PicComment> realmap = new HashMap();
+                Map<Date,PicComment> realmap = new TreeMap(Collections.reverseOrder());
                 //UDT mapper
                 UDTMapper<PicComment> mapper = new MappingManager(session).udtMapper(PicComment.class);
                 //Set our tempcommentmap to the map in the row

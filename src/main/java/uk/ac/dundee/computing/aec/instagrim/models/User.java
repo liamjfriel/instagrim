@@ -431,6 +431,11 @@ public class User {
         for (Row row : rs) {
             //Set the string to the profilepicture id
             String picid = row.getString("profilepictureid");
+            //If the picid equals null
+            if(picid == null){
+                //Return null
+                return null;
+            }
             //Return the picid as a UUID 
             return UUID.fromString(picid);
         }
