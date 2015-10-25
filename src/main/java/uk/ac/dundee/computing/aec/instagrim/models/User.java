@@ -25,6 +25,7 @@ import java.lang.Object;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.UUID;
 import java.util.HashMap;
 import java.util.Iterator;
 import uk.ac.dundee.computing.aec.instagrim.lib.Addresses;
@@ -81,6 +82,7 @@ public class User {
         return true;
     }
     
+    
     public void updateUser(String username, String password, String firstname, String lastname, String email, String sex, String dob, String streetname, String city, String zip, String country)
     {
         //Connect to cluster instagrim
@@ -132,6 +134,20 @@ public class User {
                 boundStatement.bind( // here you are binding the 'boundStatement'
                    //     username,EncodedPassword,firstname,lastname,email,sex,streetname,city,zip,country));
                         set,followtarget));
+        
+        //Now add the following value from the person who was following this user
+        ps = session.prepare("update userprofiles set following = following + ? where login=?"); //Because this is a set, we don't really have to worry if the record already exists in there
+        //As casandra does not duplicate the values
+        boundStatement = new BoundStatement(ps); // Create new boundstatement object
+        //New object of type set
+        Set<String> followingset = new HashSet();
+        //Add followtarget to this set
+        followingset.add(followtarget);
+        //Execute the CQL command
+        session.execute( 
+                boundStatement.bind(
+                    //Bind followingset and follower variables
+                        followingset,follower));
     }
     
     
@@ -207,20 +223,58 @@ public class User {
         
         Session session = cluster.connect("instagrim");
         
-        Set<String> set = new HashSet();
-        set.add(follower);
+        Set<String> followerset = new HashSet();
+        followerset.add(follower);
         PreparedStatement ps = session.prepare("update userprofiles set followers = followers - ? where login=?"); //Because this is a set, we don't really have to worry if the record already exists in there
         //As casandra does not duplicate the values
         BoundStatement boundStatement = new BoundStatement(ps); // Create new boundstatement object
-        
-       // Syntax wise, this should work. However for some reason it does not. 
-       // PreparedStatement ps = session.prepare("insert into userprofiles (login,password,first_name,last_name,email,sex,addresses) Values (?,?,?,?,?,?,{'home':{street:?,city:?,zip:?,country:?}})");
-        //So instead, we'll do this which probably allows for CQL injection. This will be fixed eventually.
+        //Execute the CQL preprared statement we just made
         session.execute( // this is where the query is executed
                 boundStatement.bind( // here you are binding the 'boundStatement'
                    //     username,EncodedPassword,firstname,lastname,email,sex,streetname,city,zip,country));
-                        set,followtarget));
+                        followerset,followtarget));
+        
+        //Now remove the following value from the person who was following this user
+        ps = session.prepare("update userprofiles set following = following - ? where login=?"); //Because this is a set, we don't really have to worry if the record already exists in there
+        //As casandra does not duplicate the values
+        boundStatement = new BoundStatement(ps); // Create new boundstatement object
+        //New object of type set
+        Set<String> followingset = new HashSet();
+        //Add followtarget to this set
+        followingset.add(followtarget);
+        //Execute the CQL command
+        session.execute( 
+                boundStatement.bind(
+                    //Bind followingset and follower variables
+                        followingset,follower));
+        
     }
+    
+    //Return a set with all following users
+    public Set<String> followingSet(String username){
+        //Connect to cluster instagrim
+        Session session = cluster.connect("instagrim");
+        //New prepared statement, that will select following set where the login equals a bound parameter
+        PreparedStatement ps = session.prepare("select following from userprofiles where login =?");
+        ResultSet rs = null;
+        BoundStatement boundStatement = new BoundStatement(ps); // Create new boundstatement object
+        rs = session.execute( // this is where the query is executed
+                boundStatement.bind( // here you are binding the 'boundStatement'
+                        username));
+        if (rs.isExhausted()) { //If there's nothing in the resultset
+            System.out.println("User not found."); //Print that there is no users found
+            return null; //Return null
+        } else { //Otherwise
+            for (Row row : rs) {
+               //THIS WAS ALL SOURCED FROM THE DOCUMENTATION FOR CASSANDRA
+               Set<String> set = row.getSet("following", String.class);
+               return set;
+             }
+        }
+        
+        return null;
+    }
+    
     //Return a set with all followers
     public Set<String> followerSet(String username){
     
@@ -356,11 +410,36 @@ public class User {
         session.execute(
                 boundStatement.bind(
                         pic, user));
+        
+    }
+    
+    public UUID getProfilePic(String username){
+        //Connect to the keyspace instagrim
+        Session session = cluster.connect("instagrim");
+        //Create prepared statement where we enter the profilepic id to the user
+        PreparedStatement ps = session.prepare("select profilepictureid from userprofiles where login=?");
+        //Result set intialised as null
+        ResultSet rs = null;
+        //Create boundstatement
+        BoundStatement boundStatement = new BoundStatement(ps);
+        //Execute our boundstatement
+        rs = session.execute(
+                boundStatement.bind(
+                        username));
+        
+        //In the row we got back in the result set
+        for (Row row : rs) {
+            //Set the string to the profilepicture id
+            String picid = row.getString("profilepictureid");
+            //Return the picid as a UUID 
+            return UUID.fromString(picid);
+        }
+        return null;
     }
     
     public void setCluster(Cluster cluster) {
         this.cluster = cluster;
-    }
+    }       
 
     
 }

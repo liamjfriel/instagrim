@@ -109,23 +109,39 @@ public class UserProfiles extends HttpServlet {
         if(lg != null){
             if (lg.getlogedin()){
                 String args[] = Convertors.SplitRequestPath(request); //Borrowed from Image, takes arguments of URL and splits it so we can get the username
+                //Set the string username to part of the URL
                 String username = args[2];
-                User usersprofile = new User(); //Create new user object
-                usersprofile.setCluster(cluster); //Set the cluster in this user class to the one we are sending
-                Map<String,String> userinfo = usersprofile.UserInfoMap(username); //Set our map to the one we get from the user model, which is retrieved from the database
+                //Create new user object
+                User usersprofile = new User(); 
+                //Set the cluster in the userprofile object to the cluster we initialised in init
+                usersprofile.setCluster(cluster);
+                //Map object of type string, string called userinfo equals the return of the user info map from user model
+                Map<String,String> userinfo = usersprofile.UserInfoMap(username); 
+                //Request dispatcher for userprofile.jsp
                 RequestDispatcher rd = request.getRequestDispatcher("/userprofile.jsp"); //Get the request dispatcher from useprrofile
+                //Set the attribute "InfoMap" that will be  called from userprofile.jsp to the info m ap we got 
                 request.setAttribute("InfoMap", userinfo); //Set the attribute of infomap to the map we just created
+                //Boolean logged in equals true
                 boolean loggedin = true;
+                //Set the attribute "loggedin" to the boolean we just set, can't use .getlogedin() for some reason
                 request.setAttribute("loggedin", loggedin);
+                //String logedinname equals the name of the user
                 String logedinname=lg.getUsername();
+                //Set of type string is set to the return of the function which gets all the followers of the username passed
                 Set<String> set = usersprofile.followerSet(username);
+                //Attribute "followerSet" is set equal to set so it can be passed to userprofile.jsp
                 request.setAttribute("followerSet", set);
+                //Boolean isfollowing equals the return the function in the model that checks if the logged in user is already following the user who's profile they are visiting
                 boolean isfollowing = usersprofile.isFollowing(logedinname,username);
+                //Attrivute "isfollowing" is set to that boolean so it can be passed to the jsp
                 request.setAttribute("isfollowing", isfollowing);
+                //Forward
                 rd.forward(request, response);
                 } else {
+                //The user isn't logged in, so we're telling them to log in
                 response.sendRedirect("/login.jsp");
             }
+        //The user isn't logged in, so we're telling them to go log in
         } else {
             response.sendRedirect("/Instagrim/login.jsp");
         } 
@@ -141,7 +157,7 @@ public class UserProfiles extends HttpServlet {
      */
     @Override
     public String getServletInfo() {
-        return "Short description";
+        return "This servlet controls the userprofiles.";
     }// </editor-fold>
 
 }

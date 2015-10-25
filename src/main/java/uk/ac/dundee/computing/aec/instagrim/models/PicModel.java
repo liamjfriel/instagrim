@@ -38,10 +38,13 @@ import static org.imgscalr.Scalr.*;
 import org.imgscalr.Scalr.Method;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.UUID;
 import uk.ac.dundee.computing.aec.instagrim.lib.*;
 import uk.ac.dundee.computing.aec.instagrim.stores.Pic;
 import java.util.List;
+import java.util.Set;
+import java.util.ArrayList;
 //import uk.ac.dundee.computing.aec.stores.TweetStore;
 
 public class PicModel {
@@ -138,10 +141,80 @@ public class PicModel {
         return pad(img, 4);
     }
    
+   //This method gets a list of the new photos added by the people they are following
+    public List<Pic> getUserFeed(String username){
+        //Declare list of lists of type Pic that we will use to store each users pictures
+        List<Pic> feed = new LinkedList();
+        //Declare list of pictures that will be stored in the above list and will store each users pic
+        List<Pic> listofpicsforuser;
+        //Create new user object
+        User us = new User();
+        //Set the cluster to cluster
+        us.setCluster(cluster);
+        //Get a set with all the followers of the user
+        Set<String> following = us.followingSet(username);
+        //If the list has nothing in it
+        if(following == null){
+            //Return null
+            return null;
+        }
+        //So it isn't null, begin going through the set getting all the names
+        Iterator<String> iterator;
+        iterator = following.iterator();
+        //While we've still got a list in front of us
+        while (iterator.hasNext()) {
+            //String picstoget equals one of the people the user is following
+            String picstoget = (String) iterator.next();
+            //Set listofpicsforuser equal to the return of their pic list
+            listofpicsforuser = getPicsForUser(picstoget);
+            //Iterate through this new list
+            Iterator<Pic> piciterator = listofpicsforuser.iterator();
+            while(piciterator.hasNext()){
+                //Pic object that the iterator is on is referenced
+                Pic userpic = (Pic) piciterator.next();
+                //If the feed list is empty
+                if(feed.isEmpty() == true){
+                    //Add the picture to the feed list
+                    feed.add(userpic);
+                } else {
+                    //Iterator for the feed list intitialised
+                    Iterator<Pic> feediterator = feed.iterator();
+                    //Intialise counter that we will use to insert at certain indexes
+                    int i = 0;
+                    //Iterate through feed list, and tag it as feed loop
+                    feedloop:
+                    while(feediterator.hasNext()){
+                       //Pic object that the iterator is on is referenced
+                        Pic feedpic = (Pic) feediterator.next();
+                        //If the pic from the users list is more recent than the one currently in the list
+                        if(userpic.getUploaddate().after(feedpic.getUploaddate())){
+                            //Add it to the feed, at the index the previous picture was at
+                            feed.add(i, userpic);
+                            break feedloop;
+                        }
+                        //Increment the counter
+                        i++;
+                    }
+
+                    //If the feed is over 15 objects, get rid of the extra ones
+                    if(feed.size() > 14){
+                        feed.subList(14, feed.size()).clear();
+                    }
+                }
+              
+            }
+            
+         
+        }
+        //Return a list of all the lists of pictures
+        return feed;             
+        
+    }
+   
     public java.util.LinkedList<Pic> getPicsForUser(String User) {
         java.util.LinkedList<Pic> Pics = new java.util.LinkedList<>();
         Session session = cluster.connect("instagrim");
-        PreparedStatement ps = session.prepare("select picid,user,pic_added,comments from userpiclist where user =?");
+        PreparedStatement ps = session.prepare("select picid,user,pic_added from userpiclist where user =?");
         ResultSet rs = null;
         BoundStatement boundStatement = new BoundStatement(ps);
         rs = session.execute( // this is where the query is executed
@@ -166,8 +239,41 @@ public class PicModel {
         return Pics;
     }
     
-    public void addComment(UUID picid, String username, String comment)
-    {
+    //Method for deleting the pictures
+    public void deletePicture(UUID picid, String username){
+        
+        //New User object
+        User us = new User();
+        //Set the cluster
+        us.setCluster(cluster);
+        //If picid is the same as the users profile picture
+        if(picid.equals(us.getProfilePic(username))){
+            //Set the profile pic to null
+            us.setProfilePic(null, username);
+        }
+        //Connect to the instagrim keyspace
+        Session session = cluster.connect("instagrim");
+        //DELETE FROM PIC TABLE
+        //Prepare the delete statement
+        PreparedStatement ps = session.prepare("delete from pics where picid=?");
+        //Create new boundstatement object, passing the prepared statement
+        BoundStatement boundStatement1 = new BoundStatement(ps);
+        //Execute the boundstatement
+        session.execute( // this is where the query is executed
+                boundStatement1.bind( // here you are binding the 'boundStatement'
+                        picid));
+        //DELETE FROM userpiclist TABLE
+        //Prepare the delete statement
+        PreparedStatement qs = session.prepare("delete from userpiclist where user=? and picid = ?");
+        //Create new boundstatement object, passing the prepared statement
+        BoundStatement boundStatement2 = new BoundStatement(qs);
+        //Execute the boundstatement
+        session.execute( // this is where the query is executed
+                boundStatement2.bind( // here you are binding the 'boundStatement'
+                        username,picid));
+    }
+    
+    public void addComment(UUID picid, String username, String comment){
         //Connect to cluster instagrim
         Session session = cluster.connect("instagrim");
         //UDT mapper

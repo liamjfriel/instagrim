@@ -32,6 +32,7 @@ import uk.ac.dundee.computing.aec.instagrim.models.User;
 import uk.ac.dundee.computing.aec.instagrim.stores.LoggedIn;
 import uk.ac.dundee.computing.aec.instagrim.stores.Pic;
 import java.util.UUID;
+import java.util.Date;
 
 /**
  * Servlet implementation class Image
@@ -151,6 +152,21 @@ public class ImagePage extends HttpServlet {
                     user.setCluster(cluster);
                     //Set the usersprofile pic
                     user.setProfilePic(picname,lg.getUsername());
+                    //Send redirect to usersprofle
+                    response.sendRedirect("/Instagrim/profiles/" + lg.getUsername());
+                }
+                //If the user clicked "deletepic"
+                if(request.getParameter("deletepic") != null){
+                    //Get the date of the pic, this is the needed to delete it
+                    Date datetopass = (Date) request.getAttribute("picdate");
+                    //Create new user object
+                    PicModel pm = new PicModel();
+                    //Set the cluster in that class
+                    pm.setCluster(cluster);
+                    //Set UUID to picstringid converted to UUID from string
+                    UUID picid = UUID.fromString(picname);
+                    //Delete the picture from the database,passing the URL 
+                    pm.deletePicture(picid,lg.getUsername());
                     //Send redirect to usersprofle
                     response.sendRedirect("/Instagrim/profiles/" + lg.getUsername());
                 }

@@ -39,8 +39,7 @@ public final class Keyspaces {
                     + "picid uuid,\n"
                     + "user varchar,\n"
                     + "pic_added timestamp,\n"
-                    + "PRIMARY KEY (user,pic_added)\n"
-                    + ") WITH CLUSTERING ORDER BY (pic_added desc);";
+                    + "PRIMARY KEY (user,picid));";
             String CreateAddressType = "CREATE TYPE if not exists instagrim.address (\n"
                     + "      street text,\n"
                     + "      city text,\n"
@@ -57,6 +56,7 @@ public final class Keyspaces {
                     + "      sex text,\n"
                     + "      dob text,\n"
                     + "      followers set<text>,\n"
+                    + "      following set<text>,\n"
                     + "      addresses  map<text, frozen <address>>,\n"
                     + "      profilepictureid text\n"
                     + "  );";

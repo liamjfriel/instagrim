@@ -47,9 +47,10 @@
             <form method="POST">
                 <input type="text" name="commentext"> 
                 <input type="submit" name="commentsubmit" value="Submit"> 
-                <input type="hidden" name="uploader" value="<%=pictoshow.getUploader()%>">
             </form>
         <%
+            Date datetopass = pictoshow.getUploaddate();
+            request.setAttribute("picdate",datetopass);
             boolean canbeprofilepic = (boolean) request.getAttribute("canprofilepic");
             //If canbeprofilepic is true
             if(canbeprofilepic)
@@ -58,6 +59,8 @@
         %>
                 <form method="POST">
                 <input type="submit" name="makeprofile" value="Make profile picture"> 
+                <input type="submit" name="deletepic" value="Delete picture">
+               
                 </form>
         <ul>
         <%
