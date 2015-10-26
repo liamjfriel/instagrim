@@ -78,7 +78,8 @@ public class User {
                    //     username,EncodedPassword,firstname,lastname,email,sex,streetname,city,zip,country));
                         username,EncodedPassword,firstname, lastname, email, sex,dob,addressmap));
         //We are assuming this always works.  Also a transaction would be good here !
-        
+        //Close the session
+       session.close();
         return true;
     }
     
@@ -117,6 +118,8 @@ public class User {
                 boundStatement.bind( // here you are binding the 'boundStatement'
                    //     username,EncodedPassword,firstname,lastname,email,sex,streetname,city,zip,country));
                         password,firstname,lastname,email,sex,dob,addressmap,username));
+        //Close the session
+       session.close();
     }
     
     public void followUser(String follower, String followtarget)
@@ -148,6 +151,8 @@ public class User {
                 boundStatement.bind(
                     //Bind followingset and follower variables
                         followingset,follower));
+        //Close the session
+        session.close();
     }
     
     
@@ -160,9 +165,12 @@ public class User {
         rs = session.execute( // this is where the query is executed
                 boundStatement.bind( // here you are binding the 'boundStatement'
                         followtarget));
+        //Close the session
+        session.close();
         if (rs.isExhausted()) { //If there's nothing in the resultset
             System.out.println("User not found."); //Print that there is no users found
             return false; //Return null
+            
         } else { //Otherwise
             for (Row row : rs) {
                //THIS WAS ALL SOURCED FROM THE DOCUMENTATION FOR CASSANDRA
@@ -173,11 +181,12 @@ public class User {
                        return true; //Return true
                    }
                }
-               
+              
                return false; //If we get here, the user is not in the follower set
             }
           
         }
+     
      return false;   
     }
     
@@ -199,7 +208,8 @@ public class User {
             boundStatement.bind( // here you are binding the 'boundStatement'
             //     username,EncodedPassword,firstname,lastname,email,sex,streetname,city,zip,country));
                 tosearch));
-
+        //Close the session
+        session.close();
         if (rs.isExhausted() || rs == null) { //If there's nothing in the resultset
             System.out.println("User not found."); //Print that there is no users found
             return null; //Return null
@@ -212,6 +222,7 @@ public class User {
                searchresults.put("profilepicid", row.getString("profilepictureid"));
                listofresults.add(searchresults);
              }
+         
             return listofresults;
         }
         
@@ -248,6 +259,9 @@ public class User {
                     //Bind followingset and follower variables
                         followingset,follower));
         
+         //Close the session
+        session.close();
+        
     }
     
     //Return a set with all following users
@@ -261,6 +275,8 @@ public class User {
         rs = session.execute( // this is where the query is executed
                 boundStatement.bind( // here you are binding the 'boundStatement'
                         username));
+        //Close the session
+        session.close();
         if (rs.isExhausted()) { //If there's nothing in the resultset
             System.out.println("User not found."); //Print that there is no users found
             return null; //Return null
@@ -271,7 +287,6 @@ public class User {
                return set;
              }
         }
-        
         return null;
     }
     
@@ -285,6 +300,8 @@ public class User {
         rs = session.execute( // this is where the query is executed
                 boundStatement.bind( // here you are binding the 'boundStatement'
                         username));
+        //Close the session
+        session.close();
         if (rs.isExhausted()) { //If there's nothing in the resultset
             System.out.println("User not found."); //Print that there is no users found
             return null; //Return null
@@ -292,10 +309,13 @@ public class User {
             for (Row row : rs) {
                //THIS WAS ALL SOURCED FROM THE DOCUMENTATION FOR CASSANDRA
                Set<String> set = row.getSet("followers", String.class);
+                //Close the session
+                session.close();
                return set;
              }
         }
-        
+        //Close the session
+        session.close();
         return null;
     }
     
@@ -315,7 +335,8 @@ public class User {
         rs = session.execute( // this is where the query is executed
                 boundStatement.bind( // here you are binding the 'boundStatement'
                         username));
-        
+        //Close the session
+         session.close();
         //Okay, so we borrowed this from the method IsValidUser
         if (rs.isExhausted()) { //If there's nothing in the resultset
             System.out.println("User not found."); //Print that there is no users found
@@ -347,24 +368,6 @@ public class User {
             }
         }
         
-        
-        
-        /*
-        userinformationbeforeparse = rs.one(); //Set our userinformationbeforeparse list to the result
-        if(rs == null){
-            actualuserinformation.put("FirstName","test");
-        } else {
-            //What we are doing here is parsing the userinformationbeforeparse row that contains the result of our query and pulling information that we want from it and 
-            //..putting it into our hashmap that we will pass
-            actualuserinformation.put("FirstName", userinformationbeforeparse.getString(0));
-            actualuserinformation.put("SecondName", userinformationbeforeparse.getString(1));
-            actualuserinformation.put("Sex", userinformationbeforeparse.getString(2));
-            actualuserinformation.put("DOB", userinformationbeforeparse.getString(3));
-            //Next three lines get the town/city and  country and put them in the hashmap. They do this by pulling the map from the row, then pulling data from keys in that map
-           // actualuserinformation.put("Town", userinformationbeforeparse.getMap("addresses",String.class,String.class).get("city"));
-           // actualuserinformation.put("Country", userinformationbeforeparse.getMap("addresses",String.class,String.class).get("country"));   
-        }
-        */
         return actualuserinformation; //Return our map now that it's full of data
     }
     
@@ -385,6 +388,8 @@ public class User {
         rs = session.execute( // this is where the query is executed
                 boundStatement.bind( // here you are binding the 'boundStatement'
                         username));
+        //Close the session
+         session.close();
         if (rs.isExhausted()) {
             System.out.println("No Images returned");
             return false;
@@ -392,6 +397,8 @@ public class User {
             for (Row row : rs) {
                
                 String StoredPass = row.getString("password");
+                //Close the session
+                session.close();
                 if (StoredPass.compareTo(EncodedPassword) == 0)
                     return true;
             }
@@ -410,6 +417,8 @@ public class User {
         session.execute(
                 boundStatement.bind(
                         pic, user));
+         //Close the session
+        session.close();
         
     }
     
@@ -426,7 +435,8 @@ public class User {
         rs = session.execute(
                 boundStatement.bind(
                         username));
-        
+        //Close the session
+         session.close();
         //In the row we got back in the result set
         for (Row row : rs) {
             //Set the string to the profilepicture id

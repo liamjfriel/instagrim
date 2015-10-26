@@ -132,25 +132,52 @@ public class Image extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         for (Part part : request.getParts()) {
             System.out.println("Part Name " + part.getName());
-
+            
             String type = part.getContentType();
             String filename = part.getSubmittedFileName();
-            
+            //Filter is intialised as 0
+            int filter = 0;
             InputStream is = request.getPart(part.getName()).getInputStream();
+            //Int i is set to the amount of byes available can be read without blocking
             int i = is.available();
             HttpSession session=request.getSession();
+            //Get the LogedIn attribute and set it to a LoggedIn object called lg
             LoggedIn lg= (LoggedIn)session.getAttribute("LoggedIn");
+            //Username string is set to majed
             String username="majed";
+            //Switch for the radiobuttons
+            switch(request.getParameter("radios"))
+            {
+                //If the user selected black and white
+                case ("Blackwhite"):
+                {
+                    //Set the filter to 1
+                    filter = 1;
+                    break;
+                }
+                //If the user selected normal
+                case "Normal":
+                {
+                    //Set the filter to 2
+                    filter = 2;
+                }
+            
+            }
+            //If the user is logged in
             if (lg.getlogedin()){
+                //Get the users username
                 username=lg.getUsername();
             }
+            //If i is larger than 0
             if (i > 0) {
+                //New byte array called b is initialised, size is i+1
                 byte[] b = new byte[i + 1];
+                //
                 is.read(b);
                 System.out.println("Length : " + b.length);
                 PicModel tm = new PicModel();
                 tm.setCluster(cluster);
-                tm.insertPic(b, type, filename, username);
+                tm.insertPic(b, type, filename, username,filter);
 
                 is.close();
             }

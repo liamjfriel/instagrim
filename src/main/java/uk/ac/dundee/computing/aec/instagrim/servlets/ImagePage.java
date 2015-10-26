@@ -84,7 +84,7 @@ public class ImagePage extends HttpServlet {
                 //Comment map  equals the one we get from picmodel
                 List<Map> commentlist = picmod.getComments(picuuid);
                 //Showpic pic object equals the return of the getmap method from picmod
-                Pic showpic = picmod.getPic(Convertors.DISPLAY_IMAGE, picuuid);
+                Pic showpic = picmod.getPic(Convertors.DISPLAY_PROCESSED, picuuid);
                 //Set the attribute comments to the the comments we got from the picmodel
                 request.setAttribute("comments", commentlist);
                 //Set the attribute pic to the the picture we got from the picmodel

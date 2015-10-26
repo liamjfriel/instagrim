@@ -23,13 +23,20 @@ import com.datastax.driver.core.utils.Bytes;
 import com.datastax.driver.mapping.MappingManager;
 import com.datastax.driver.mapping.UDTMapper;
 import java.awt.image.BufferedImage;
+import java.awt.image.BufferedImageOp;
 import java.io.ByteArrayOutputStream;
+import java.awt.image.ByteLookupTable;
 import java.io.File;
+import java.awt.image.ConvolveOp;
+import java.awt.image.Kernel;
+import java.awt.image.LookupOp;
 import java.util.Collections;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.awt.image.ColorConvertOp;
+import java.awt.image.Kernel;
 import java.nio.ByteBuffer;
 import java.util.Date;
 import java.util.LinkedList;
@@ -59,7 +66,7 @@ public class PicModel {
         this.cluster = cluster;
     }
 
-    public void insertPic(byte[] b, String type, String name, String user) {
+    public void insertPic(byte[] b, String type, String name, String user, int filter) {
         try {
             Convertors convertor = new Convertors();
 
@@ -73,10 +80,37 @@ public class PicModel {
             FileOutputStream output = new FileOutputStream(new File("/var/tmp/instagrim/" + picid));
 
             output.write(b);
-            byte []  thumbb = picresize(picid.toString(),types[1]);
+            byte []  thumbb = picresize(picid.toString(),types[1],filter);
             int thumblength= thumbb.length;
             ByteBuffer thumbbuf=ByteBuffer.wrap(thumbb);
-            byte[] processedb = picdecolour(picid.toString(),types[1]);
+            byte[] processedb = null;
+            //Switch before we process the image
+            switch(filter){
+                //If 1, that means black and white
+                case 1: 
+                {
+                    //Decolour our picture
+                    processedb = picapplyfilter(picid.toString(),types[1], 1);
+                    //Break the switch
+                    break;
+                }
+                //If 2, that means lighter
+                case 2: 
+                {
+                    //Brightern our picture
+                    processedb = picapplyfilter(picid.toString(),types[1], 2);
+                    //Break the switch
+                    break;
+                }
+                //If 3, that means darker
+                case 3: 
+                {
+                    //Darken our picture
+                    processedb = picapplyfilter(picid.toString(),types[1], 3);
+                    //Break the switch
+                    break;
+                }
+            }
             ByteBuffer processedbuf=ByteBuffer.wrap(processedb);
             int processedlength=processedb.length;
             Session session = cluster.connect("instagrim");
@@ -85,10 +119,12 @@ public class PicModel {
             PreparedStatement psInsertPicToUser = session.prepare("insert into userpiclist ( picid, user, pic_added) values(?,?,?)");
             BoundStatement bsInsertPic = new BoundStatement(psInsertPic);
             BoundStatement bsInsertPicToUser = new BoundStatement(psInsertPicToUser);
-
+            //New date object, Date added
             Date DateAdded = new Date();
+            //Execute the following boundstatements
             session.execute(bsInsertPic.bind(picid, buffer, thumbbuf,processedbuf, user, DateAdded, length,thumblength,processedlength, type, name));
             session.execute(bsInsertPicToUser.bind(picid, user, DateAdded));
+            //Close the database connection
             session.close();
 
         } catch (IOException ex) {
@@ -96,10 +132,10 @@ public class PicModel {
         }
     }
 
-    public byte[] picresize(String picid,String type) {
+    public byte[] picresize(String picid,String type,int filter) {
         try {
             BufferedImage BI = ImageIO.read(new File("/var/tmp/instagrim/" + picid));
-            BufferedImage thumbnail = createThumbnail(BI);
+            BufferedImage thumbnail = createThumbnail(BI,filter);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ImageIO.write(thumbnail, type, baos);
             baos.flush();
@@ -113,10 +149,10 @@ public class PicModel {
         return null;
     }
     
-    public byte[] picdecolour(String picid,String type) {
+    public byte[] picapplyfilter(String picid,String type,int filter) {
         try {
             BufferedImage BI = ImageIO.read(new File("/var/tmp/instagrim/" + picid));
-            BufferedImage processed = createProcessed(BI);
+            BufferedImage processed = createProcessed(BI, filter);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             ImageIO.write(processed, type, baos);
             baos.flush();
@@ -129,15 +165,63 @@ public class PicModel {
         return null;
     }
 
-    public static BufferedImage createThumbnail(BufferedImage img) {
-        img = resize(img, Method.SPEED, 250, OP_ANTIALIAS, OP_GRAYSCALE);
+    public static BufferedImage createThumbnail(BufferedImage img, int filter) {
+        //If the filter is 1 (grayscale)
+        switch(filter){
+            //1 grayscale
+            case 1: 
+            {
+                //Scalr process the image, make it grayscale
+                img = resize(img, Method.SPEED, 250, OP_ANTIALIAS, OP_GRAYSCALE);
+                break;
+            }
+            //2 = normal
+            case 2: 
+            {
+                /*
+                //THE FOLLOWING WAS TAKEN FROM
+                //WWW.JAVA2S.COM/Code/Java/2D-Graphics-GUI/ImageFilter.htm
+                //I DO NOT TAKE CREDIT FOR THIS
+                //This creates an array of float values
+                byte[] invertArray = new byte[256];
+                for(int i = 0; i < 256; i++){
+                    invertArray[i] = (byte) (255 - i);
+                }
+                Forget it, cant get it to work anyway
+                BufferedImageOp blurfilter = new LookupOp(new ByteLookupTable(0, invertArray),null);
+                */
+                //Scalr process the image, don't apply the antialiasing
+                img = resize(img, Method.SPEED, 250, OP_ANTIALIAS);
+                break;
+            }
+        }
         // Let's add a little border before we return result.
         return pad(img, 2);
     }
     
-   public static BufferedImage createProcessed(BufferedImage img) {
+   public static BufferedImage createProcessed(BufferedImage img, int filter) {
+        //Int width equals the width of the image
         int Width=img.getWidth()-1;
-        img = resize(img, Method.SPEED, Width, OP_ANTIALIAS, OP_GRAYSCALE);
+        //If the filter is 1 (grayscale)
+        switch(filter){
+            //1 grayscale
+            case 1: 
+            {
+                //Scalr process the image, make it grayscale
+                img = resize(img, Method.SPEED, Width, OP_ANTIALIAS, OP_GRAYSCALE);
+                break;
+            }
+            //2 = normal
+            case 2: 
+            {
+                //Same thing, just don't apply the grayscale
+                img = resize(img, Method.SPEED, Width, OP_ANTIALIAS);
+                
+                break;
+            }
+            
+        }
+        //Add a border to image
         return pad(img, 4);
     }
    
@@ -177,6 +261,8 @@ public class PicModel {
                     //Add the picture to the feed list
                     feed.add(userpic);
                 } else {
+                    //Bool pic added 
+                    boolean picadded = false;
                     //Iterator for the feed list intitialised
                     Iterator<Pic> feediterator = feed.iterator();
                     //Intialise counter that we will use to insert at certain indexes
@@ -190,6 +276,8 @@ public class PicModel {
                         if(userpic.getUploaddate().after(feedpic.getUploaddate())){
                             //Add it to the feed, at the index the previous picture was at
                             feed.add(i, userpic);
+                            //set picadded to true
+                           picadded = true;
                             break feedloop;
                         }
                         //Increment the counter
@@ -199,6 +287,8 @@ public class PicModel {
                     //If the feed is over 15 objects, get rid of the extra ones
                     if(feed.size() > 14){
                         feed.subList(14, feed.size()).clear();
+                    } else if (picadded == false) {
+                        feed.add(userpic);
                     }
                 }
               
@@ -211,31 +301,51 @@ public class PicModel {
         
     }
    
-    public java.util.LinkedList<Pic> getPicsForUser(String User) {
-        java.util.LinkedList<Pic> Pics = new java.util.LinkedList<>();
+    public LinkedList<Pic> getPicsForUser(String User) {
+        //New linkedlist ob ject of type Pic
+        LinkedList<Pic> Pics = new LinkedList();
+        //Connect to the instagrim keyspace
         Session session = cluster.connect("instagrim");
+        //Prepared statement that will select from userpics where login is provided in the boundstatement
         PreparedStatement ps = session.prepare("select picid,user,pic_added from userpiclist where user =?");
+        //Result set is declared and set to null
         ResultSet rs = null;
+        //New boundstatement object that will use the prepared statement
         BoundStatement boundStatement = new BoundStatement(ps);
+        //Execute our boundstatement, and the return of it goes into the result set
         rs = session.execute( // this is where the query is executed
                 boundStatement.bind( // here you are binding the 'boundStatement'
+                        //Bind the ? from the prepared statement to user
                         User));
+        //If the result set is empty
         if (rs.isExhausted()) {
+            //Print that no images were returned
             System.out.println("No Images returned");
+            //Return null
             return null;
+        //Otherwise
         } else {
+            //Loop through the result set, row by row
             for (Row row : rs) {
+                //Pic object pic declared
                 Pic pic = new Pic();
+                //UUID object created, set to the UUID value "picid" from the row
                 java.util.UUID UUID = row.getUUID("picid");
+                //Prints the UUID to the console, converting it to a string to do so
                 System.out.println("UUID" + UUID.toString());
+                //Set the UUID in the pic object to the one we just declared
                 pic.setUUID(UUID);
-                //Set the uploaddate to the pic_added value
+                //Set the uploaddate to the pic_added value in the row
                 pic.setUploaddate(row.getDate("pic_added"));
                 //Set uploader to the "user" value of the row returned
                 pic.setUploader(row.getString("user"));
+                //Add the pic object to the Pics list we declared earlier
                 Pics.add(pic);
             }
         }
+        //Close the database connection
+        session.close();
+        //Return pics
         return Pics;
     }
     
@@ -272,6 +382,8 @@ public class PicModel {
         session.execute( // this is where the query is executed
                 boundStatement2.bind( // here you are binding the 'boundStatement'
                         username,picid));
+        //Close connection to database
+        session.close();
     }
     
     public void addComment(UUID picid, String username, String comment){
@@ -301,6 +413,8 @@ public class PicModel {
                 boundStatement.bind( 
                     //Bind the variables commentmap and picid
                         commentfordatabase,picid));
+        //Close connection to database
+        session.close();
     }
     
     public List getComments(java.util.UUID picid)
@@ -349,63 +463,101 @@ public class PicModel {
                 //Add the commentmap to the list
                 commentlist.add(realmap);
              }
+            //Disconnect from database
+            session.close();
             //Return the list
             return commentlist;
         }
        
     }
-
+    //This methood returns a pic, using the picid
     public Pic getPic(int image_type, java.util.UUID picid) {
+        //Connect to keyspace instagrim
         Session session = cluster.connect("instagrim");
+        //Intialising values, set thenm to null
         ByteBuffer bImage = null;
         String type = null;
         String uploader = null;
+        //Date upload date intialised as null
         Date uploaddate = null;
+        //Map of comments is intialised as null
         Map<String,String> comments = null;
+        //Int length intialised as 0
         int length = 0;
         try {
+            //New convertors object converted created
             Convertors convertor = new Convertors();
+            //New result set rs intiialised as null
             ResultSet rs = null;
+            //New prepared statement ps set to null
             PreparedStatement ps = null;
-         
+            //If the parameter image_type equals 1
             if (image_type == Convertors.DISPLAY_IMAGE) {
-                
-                ps = session.prepare("select image,imagelength,type,interaction_time,user from pics where picid =?");
+                //Prepare the following statement that will get the following values from the databse
+                ps = session.prepare("select image,imagelength,type from pics where picid =?");
+            //If it's 2
             } else if (image_type == Convertors.DISPLAY_THUMB) {
+                //Same thing, get the thumbnail and relevant information
                 ps = session.prepare("select thumb,imagelength,thumblength,type from pics where picid =?");
+            //If it's three
             } else if (image_type == Convertors.DISPLAY_PROCESSED) {
-                ps = session.prepare("select processed,processedlength,type from pics where picid =?");
+                //You get the idea
+                ps = session.prepare("select processed,processedlength,type,interaction_time,user from pics where picid =?");
             }
+            //New boundstatement object created, with the prepared statement passed for binding
             BoundStatement boundStatement = new BoundStatement(ps);
+            //Result set is the return of the query we are binding and executing
             rs = session.execute( // this is where the query is executed
                     boundStatement.bind( // here you are binding the 'boundStatement'
                             picid));
-
+            //If the result set is empty
             if (rs.isExhausted()) {
+                //Then there's no images with that picid
                 System.out.println("No Images returned");
+                //So retur null
                 return null;
+            //Otherwise
             } else {
+                //Iterate through each row in the result set
                 for (Row row : rs) {
+                    //If the image type equals 1
                     if (image_type == Convertors.DISPLAY_IMAGE) {
+                        //Set bImage to the bytes stored in "image" in the row
                         bImage = row.getBytes("image");
+                        //Set length to the interger stored in "imagelength" in the row
                         length = row.getInt("imagelength");
+                        /*
+                        //And upload date
                         uploaddate = row.getDate("interaction_time");
+                        //And user that uploaded the pic
                         uploader = row.getString("user");
+                        */
                     } else if (image_type == Convertors.DISPLAY_THUMB) {
+                        //Thumbnail pic bytes
                         bImage = row.getBytes("thumb");
+                        //Length int value in the row
                         length = row.getInt("thumblength");
                 
                     } else if (image_type == Convertors.DISPLAY_PROCESSED) {
+                        //Bytes that are in "processed" field
                         bImage = row.getBytes("processed");
+                        //Length that is the int value in the row
                         length = row.getInt("processedlength");
+                        //Date is the date value "interaction_time" in the row
+                        uploaddate = row.getDate("interaction_time");
+                        //And uploader is string user in row 
+                        uploader = row.getString("user");
                     }
-                    
+                    //Type is set to the string value "type" from our row
                     type = row.getString("type");
 
                 }
             }
+        //If an exception happens
         } catch (Exception et) {
+            //Print that we couldn't get a pic, with the exception
             System.out.println("Can't get Pic" + et);
+            //Returnnull
             return null;
         }
         //Close the session
